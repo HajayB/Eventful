@@ -90,7 +90,7 @@ EMAIL_PORT=587
 EMAIL_USER=email_adress
 EMAIL_FROM=email_name
 EMAIL_PASS=yourEmailPass
-REDIS_URL=redis://localhost:6379
+
 
 #LocalTunnel Requirement (Webhook Important)
 
@@ -280,7 +280,7 @@ Viewing tickets
 Viewing events
 Attended events
 
-Caching layer (Redis)
+Caching layer
 
 Event search & filtering
 

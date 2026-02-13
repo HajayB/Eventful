@@ -1,6 +1,6 @@
 // src/services/ticketService.ts
 import { Types } from "mongoose";
-import { TicketDocument } from "../models/ticketModel";
+
 import { Ticket } from "../models/ticketModel";
 import { Event } from "../models/eventModel";
 import crypto from "crypto";

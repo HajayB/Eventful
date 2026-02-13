@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.shareEvent = exports.deleteEvent = exports.updateEvent = exports.getCreatorEvents = exports.getSingleEvent = exports.getAllEvents = exports.createEvent = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-const redis_1 = require("../config/redis");
+const cache_1 = require("../utils/cache");
 const eventService_1 = require("../services/eventService");
 const eventModel_1 = require("../models/eventModel");
 /**
@@ -19,7 +19,7 @@ const createEvent = async (req, res) => {
             creatorId,
         });
         // Invalidate public events cache
-        await redis_1.redis.del("events:all");
+        await cache_1.cache.del("events:all");
         res.status(201).json(event);
     }
     catch (error) {
@@ -33,12 +33,12 @@ exports.createEvent = createEvent;
 const getAllEvents = async (req, res) => {
     try {
         const cacheKey = "events:all";
-        const cached = await redis_1.redis.get(cacheKey);
+        const cached = cache_1.cache.get(cacheKey);
         if (cached) {
-            return res.status(200).json(JSON.parse(cached));
+            return res.status(200).json(cached);
         }
         const events = await (0, eventService_1.getAllEventsService)();
-        await redis_1.redis.set(cacheKey, JSON.stringify(events), "EX", 60);
+        cache_1.cache.set(cacheKey, events);
         res.status(200).json(events);
     }
     catch (error) {
@@ -53,12 +53,12 @@ const getSingleEvent = async (req, res) => {
     try {
         const eventId = req.params.eventId;
         const cacheKey = `events:${eventId}`;
-        const cached = await redis_1.redis.get(cacheKey);
+        const cached = cache_1.cache.get(cacheKey);
         if (cached) {
-            return res.status(200).json(JSON.parse(cached));
+            return res.status(200).json(cached);
         }
         const event = await (0, eventService_1.getSingleEventService)(eventId);
-        await redis_1.redis.set(cacheKey, JSON.stringify(event), "EX", 60);
+        cache_1.cache.set(cacheKey, event);
         res.status(200).json(event);
     }
     catch (error) {
@@ -89,8 +89,8 @@ const updateEvent = async (req, res) => {
         const eventId = req.params.eventId;
         const updatedEvent = await (0, eventService_1.updateEventService)(eventId, creatorId, req.body);
         // Invalidate caches
-        await redis_1.redis.del("events:all");
-        await redis_1.redis.del(`events:${eventId}`);
+        await cache_1.cache.del("events:all");
+        await cache_1.cache.del(`events:${eventId}`);
         res.status(200).json(updatedEvent);
     }
     catch (error) {
@@ -107,8 +107,8 @@ const deleteEvent = async (req, res) => {
         const eventId = req.params.eventId;
         await (0, eventService_1.deleteEventService)(eventId, creatorId);
         // Invalidate caches
-        await redis_1.redis.del("events:all");
-        await redis_1.redis.del(`events:${eventId}`);
+        await cache_1.cache.del("events:all");
+        await cache_1.cache.del(`events:${eventId}`);
         res.status(200).json({ message: "Event deleted 🗑" });
     }
     catch (error) {

@@ -17,7 +17,6 @@ exports.env = {
         expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
     },
     mongodbUri: process.env.MONGO_URI,
-    redisUrl: process.env.REDIS_URL,
     paystack: {
         baseUrl: process.env.PAYSTACK_BASE_URL,
         secretKey: process.env.PAYSTACK_SECRET_KEY,

@@ -19,8 +19,6 @@ export const env = {
 
   mongodbUri: process.env.MONGO_URI as string,
 
-  redisUrl: process.env.REDIS_URL as string,
-
   paystack: {
     baseUrl:process.env.PAYSTACK_BASE_URL as string,
     secretKey: process.env.PAYSTACK_SECRET_KEY as string,

@@ -5,14 +5,14 @@ const mongoose_1 = require("mongoose");
 const eventModel_1 = require("../models/eventModel");
 const ticketModel_1 = require("../models/ticketModel");
 const paymentModel_1 = require("../models/paymentModel");
-const redis_1 = require("../utils/redis");
+const cache_1 = require("../utils/cache");
 //CREATOR ANALYTICS 
 /**
  * CREATOR: All-time analytics
  */
 const getCreatorAllTimeAnalytics = async (creatorId) => {
     const cacheKey = `analytics:creator:${creatorId}:all`;
-    const cached = await (0, redis_1.getCache)(cacheKey);
+    const cached = await (0, cache_1.getCache)(cacheKey);
     if (cached) {
         return cached;
     }
@@ -27,7 +27,7 @@ const getCreatorAllTimeAnalytics = async (creatorId) => {
             totalAttendees: 0,
             totalUnusedTickets: 0,
         };
-        await (0, redis_1.setCache)(cacheKey, emptyResult, 60);
+        await (0, cache_1.setCache)(cacheKey, emptyResult, 60);
         return emptyResult;
     }
     const eventIds = events.map((e) => e._id);
@@ -65,7 +65,7 @@ const getCreatorAllTimeAnalytics = async (creatorId) => {
         totalAttendees,
         totalUnusedTickets: totalTicketsSold - totalAttendees,
     };
-    await (0, redis_1.setCache)(cacheKey, result, 60);
+    await (0, cache_1.setCache)(cacheKey, result, 60);
     return result;
 };
 exports.getCreatorAllTimeAnalytics = getCreatorAllTimeAnalytics;
@@ -74,7 +74,7 @@ exports.getCreatorAllTimeAnalytics = getCreatorAllTimeAnalytics;
  */
 const getCreatorEventAnalytics = async (creatorId, eventId) => {
     const cacheKey = `analytics:creator:${creatorId}:event:${eventId}`;
-    const cached = await (0, redis_1.getCache)(cacheKey);
+    const cached = await (0, cache_1.getCache)(cacheKey);
     if (cached) {
         return cached;
     }
@@ -110,7 +110,7 @@ const getCreatorEventAnalytics = async (creatorId, eventId) => {
         qrVerified,
         qrUnverified: ticketsSold - qrVerified,
     };
-    await (0, redis_1.setCache)(cacheKey, result, 60);
+    await (0, cache_1.setCache)(cacheKey, result, 60);
     return result;
 };
 exports.getCreatorEventAnalytics = getCreatorEventAnalytics;

@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { Event } from "../models/eventModel";
 import { Ticket } from "../models/ticketModel";
 import { Payment } from "../models/paymentModel";
-import { getCache, setCache } from "../utils/redis";
+import { getCache, setCache } from "../utils/cache";
 interface CreatorPaymentAnalyticsInput {
   creatorId: string;
 }
