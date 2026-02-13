@@ -6,18 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_cron_1 = __importDefault(require("node-cron"));
 const notificationService_1 = require("../services/notificationService");
 const mongoose_1 = __importDefault(require("mongoose"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const startReminderCron = async () => {
-    const connectDB = async () => {
-        try {
-            await mongoose_1.default.connect(process.env.MONGO_URI);
-            console.log("MongoDB connected");
-        }
-        catch (error) {
-            console.error("Mongo connection error", error);
-            process.exit(1);
-        }
-    };
-    await connectDB();
+    try {
+        await mongoose_1.default.connect(process.env.MONGO_URI);
+        console.log("Worker DB connected");
+    }
+    catch (error) {
+        console.error("Mongo connection error", error);
+        process.exit(1);
+    }
+    console.log("Reminder worker started...");
     node_cron_1.default.schedule("*/1 * * * *", async () => {
         try {
             await (0, notificationService_1.processPendingReminders)();
