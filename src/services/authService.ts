@@ -57,10 +57,10 @@ export const loginUser = async ({
   password,
 }: LoginInput) => {
   // 1. Find user
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }) ;
   if (!user) {
     throw new Error("Invalid credentials");
-  }
+  }  
 
   // 2. Compare password
   const isPasswordValid = await comparePassword(
@@ -78,9 +78,11 @@ export const loginUser = async ({
     email:user.email,
     role: user.role,
   });
+  const userObject = user.toObject();
+  const { password: _, __v, ...safeUser } = userObject;
 
-  return {
-    user,
+return {
+  user: safeUser,
     token,
   };
 };

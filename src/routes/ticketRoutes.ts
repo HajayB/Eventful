@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   scanTicketController,
   getMyTicketsController,
+  getTicketQrController,
 } from "../controllers/ticketController";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCreator } from "../middlewares/requireCreator";
@@ -13,8 +14,16 @@ const router = Router();
 router.get(
   "/me",
   requireAuth,
-  getMyTicketsController
+  getMyTicketsController 
 );
+// Eventee: view ticket QR payload
+router.get(
+  "/:ticketId/qr",
+  requireAuth,
+  createRateLimiter({ windowMs: 60 * 1000, max: 5 }),
+  getTicketQrController
+);
+
 
 // Creator: scan ticket
 router.post(

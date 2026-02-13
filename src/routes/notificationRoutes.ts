@@ -16,7 +16,6 @@ router.post(
 router.get(
   "/reminder/me",
   requireAuth,
-  validateRequest(createReminderSchema),
   fetchUserReminders
 );
 export default router;

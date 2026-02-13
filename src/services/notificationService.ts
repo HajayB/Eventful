@@ -75,9 +75,12 @@ export const processPendingReminders = async () => {
         <h2>Event Reminder</h2>
         <p>Your event <strong>${event.title}</strong> is coming up.</p>
         <p><strong>Location:</strong> ${event.location}</p>
-        <p><strong>Starts at:</strong> ${new Date(
-          event.startTime
-        ).toLocaleString()}</p>
+        <p><strong>Starts at:</strong> ${new Date(event.startTime).toLocaleString("en-NG", {
+          timeZone: "Africa/Lagos",
+          dateStyle: "full",
+          timeStyle: "short",
+        })
+        }</p>
       `,
     });
 

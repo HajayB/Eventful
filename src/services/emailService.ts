@@ -68,9 +68,12 @@ export const sendTicketsEmail = async ({
         <h3>📍 Event Details</h3>
         <ul>
           <li><strong>Event:</strong> ${event.title}</li>
-          <li><strong>Date & Time:</strong> ${new Date(
-            event.startTime
-          ).toLocaleString()}</li>
+          <li><strong>Date & Time:</strong> ${new Date(event.startTime).toLocaleString("en-NG", {
+            timeZone: "Africa/Lagos",
+            dateStyle: "full",
+            timeStyle: "short",
+          })
+          }</li>
           <li><strong>Location:</strong> ${event.location}</li>
         </ul>
 

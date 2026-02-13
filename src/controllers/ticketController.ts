@@ -1,5 +1,6 @@
 import { getEventeeTickets } from "../services/ticketService";
-// src/controllers/ticketController.ts
+import { Ticket } from "../models/ticketModel";
+import mongoose from "mongoose";
 import { Request, Response } from "express";
 import { scanTicket } from "../services/ticketService";
 
@@ -79,5 +80,37 @@ export const getMyTicketsController = async (
       message: error.message || "Failed to fetch tickets",
     });
   }
+};
+
+
+export const getTicketQrController = async (
+  req: Request,
+  res: Response
+) => {
+  const eventeeId = req.user!.userId;
+  const ticketId  = req.params.ticketId as string;
+
+  if (!mongoose.Types.ObjectId.isValid(ticketId)) {
+    return res.status(404).json({ message: "Ticket not found" });
+  }
+
+  const ticket = await Ticket.findOne({
+    _id: ticketId,
+    eventeeId, // 🔐 ensures ownership
+  }).select("qrPayload isScanned");
+
+  if (!ticket) {
+    return res.status(404).json({ message: "Ticket not found" });
+  }
+
+  if (ticket.isScanned) {
+    return res.status(400).json({
+      message: "Ticket already used",
+    });
+  }
+
+  return res.json({
+    qrPayload: ticket.qrPayload,
+  });
 };
 

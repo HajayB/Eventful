@@ -1,8 +1,9 @@
 import express from "express";
+import { setupSwagger } from "./swagger";
 import routes from "./routes";
 import { Request, Response } from "express";
 const app = express();
-
+setupSwagger(app);
 //Raw body ONLY for Paystack webhook
 app.use(
   "/api/payments/webhook",

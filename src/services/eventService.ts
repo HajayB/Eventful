@@ -55,15 +55,28 @@ export const createEventService = async (
     totalTickets,
     coverImage,
     ticketsSold: 0,
-  });
+  }) ;
+  const eventObject = event.toObject();
 
-  return event;
+  const {
+    __v,
+    _id,
+    ...rest
+  } = eventObject;
+  
+  return {
+    message:"Event created succesfully",
+    id: _id.toString(),
+    ...rest,
+  };
 };
 //get all events
 export const getAllEventsService = async () => {
-  const events = await Event.find({
+  const events = await Event.find({  
     $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
-  }).sort({ startTime: 1 });
+  })
+  .select("-__v")
+  .sort({ startTime: 1 });
 
   return events;
 };
@@ -73,7 +86,7 @@ export const getSingleEventService = async (eventId: string) => {
   const event = await Event.findOne({
     _id: eventId,
     $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
-  });
+  }).select("-__v");
 
   if (!event) {
     throw new Error("Event not found");
@@ -89,7 +102,7 @@ export const getCreatorEventsService = async (
 ) => {
   const events = await Event.find({ creatorId }).sort({
     startTime: 1,
-  });
+  }).select("-__v");
 
   return events;
 };
@@ -142,7 +155,19 @@ export const updateEventService = async (
 
   await event.save();
 
-  return event;
+  const eventObject = event.toObject();
+
+  const {
+    __v,
+    _id,
+    ...rest
+  } = eventObject;
+  
+  return {
+    message:"Event edited succesfully",
+    id: _id.toString(),
+    ...rest,
+  };
 };
 
 //delete events (creator only)
@@ -159,5 +184,5 @@ export const deleteEventService = async (
     throw new Error("Event not found or unauthorized");
   }
 
-  return;
+  return{message:"Event deleted successfully"};
 };

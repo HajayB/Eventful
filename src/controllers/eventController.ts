@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { redis } from "../config/redis";
 import {
   createEventService,
@@ -141,8 +142,12 @@ const DEFAULT_EVENT_IMAGE =
   "https://placehold.co/600x400?text=EventFul+CoverImage";
 
 export const shareEvent = async (req:Request, res:Response) => {
-  const { eventId } = req.params;
-
+  const eventId = req.params.eventId as string;
+  if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    return res.status(404).json({
+      message: "Event not found",
+    });
+  } 
   const event = await Event.findById(eventId).select(
     "title description startTime location coverImage price"
   );

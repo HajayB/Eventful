@@ -1,0 +1,18 @@
+openapi: 3.0.0
+info:
+  title: Eventful API
+  version: 1.0.0
+  description: Eventful API is more than just a ticketing platform ; it's your passport to a world of unforgettable moments. 
+    From pulsating concerts to captivating theater performances, and thrilling sports events 
+    to enlightening cultural gatherings, we curate a diverse array of experiences that cater to every taste and passion.
+    This API is for managing events, ticket purchases and payments.
+
+servers:
+  - url: http://localhost:3000/api/v1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
