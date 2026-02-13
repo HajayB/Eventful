@@ -1,11 +1,18 @@
 import cron from "node-cron";
 import { processPendingReminders } from "../services/notificationService";
-import { connectDB } from "../config/db";
+import mongoose from "mongoose";
 
 const startReminderCron = async () => {
-  console.log("Worker is running...")
+ const connectDB = async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI!);
+      console.log("MongoDB connected");
+    } catch (error) {
+      console.error("Mongo connection error", error);
+      process.exit(1);
+    }
+  };
   await connectDB();
-  console.log("MongoDB connected in worker");
 
   cron.schedule("*/1 * * * *", async () => {
     try {

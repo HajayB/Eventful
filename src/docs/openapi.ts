@@ -6,6 +6,11 @@ import { z } from "zod";
 extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
+registry.registerComponent("securitySchemes", "bearerAuth", {
+  type: "http",
+  scheme: "bearer",
+  bearerFormat: "JWT",
+});
 
 /**
  * STEP 1 — Define Schemas
@@ -985,14 +990,6 @@ export const generateOpenAPIDocument = () => {
         url: "http://localhost:4000",
       },
     ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
+
   });
 };
