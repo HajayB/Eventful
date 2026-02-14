@@ -1,0 +1,16 @@
+name: Reminder Cron
+
+on:
+  schedule:
+    - cron: "*/1 * * * *"   # every minute
+  workflow_dispatch:        # allows manual run
+
+jobs:
+  trigger-reminder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call reminder endpoint
+        run: |
+          curl -X POST ${{ secrets.APP_BASE_URL }}/internal/run-reminders \
+          -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
