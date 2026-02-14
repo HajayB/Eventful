@@ -4,7 +4,7 @@ import { EventDocument } from "../models/eventModel";
 import { TicketDocument } from "../models/ticketModel";
 import { emailConfig } from "../config/email";
 import { EmailLog } from "../models/emailLogModel";
-
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 interface SendTicketsEmailInput {
   to: string;
   event: EventDocument;
@@ -21,12 +21,13 @@ export const sendTicketsEmail = async ({
   const transporter = nodemailer.createTransport({
     host: emailConfig.host,
     port: emailConfig.port,
-    secure: emailConfig.port === 465,
+    secure: false,
+    family: 4,
     auth: {
       user: emailConfig.user,
       pass: emailConfig.pass,
     },
-  });
+  }as SMTPTransport.Options);
 
   try {
     // 1️⃣ Generate QR images (both inline + attachments)

@@ -12,7 +12,8 @@ const sendTicketsEmail = async ({ to, event, tickets, paymentId, }) => {
     const transporter = nodemailer_1.default.createTransport({
         host: email_1.emailConfig.host,
         port: email_1.emailConfig.port,
-        secure: email_1.emailConfig.port === 465,
+        secure: false,
+        family: 4,
         auth: {
             user: email_1.emailConfig.user,
             pass: email_1.emailConfig.pass,
