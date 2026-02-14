@@ -4,6 +4,7 @@ import routes from "./routes";
 import { Request, Response } from "express";
 const app = express();
 setupSwagger(app);
+app.set("trust proxy", 1);
 //Raw body ONLY for Paystack webhook
 app.use(
   "/api/payments/webhook",
