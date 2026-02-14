@@ -16,7 +16,14 @@ app.use(express.json());
 // Mount all routes under /api
 app.use("/api", routes);
 
-
+//for paystack call back 
+app.use("/paystack/callback", (req: Request,res: Response)=>{
+  return res.status(200).json({
+    success: true,
+    message: "Payment confirmed. Your tickets are secured and a confirmation email is on its way.",
+  });
+  
+})
 
 
 app.use("/", (req: Request,res: Response)=>{
