@@ -45,10 +45,11 @@ export const registerUser = async ({
     email:user.email,
     role: user.role,
   });
-
+  const userObject = user.toObject();
+  const { password: _, __v, ...safeUser } = userObject;
   return {
-    user,
-    token,
+      user: safeUser,
+      token,
   };
 };
 

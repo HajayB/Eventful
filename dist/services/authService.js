@@ -25,8 +25,10 @@ const registerUser = async ({ name, email, password, role = "EVENTEE", }) => {
         email: user.email,
         role: user.role,
     });
+    const userObject = user.toObject();
+    const { password: _, __v, ...safeUser } = userObject;
     return {
-        user,
+        user: safeUser,
         token,
     };
 };
