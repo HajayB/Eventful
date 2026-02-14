@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Call reminder endpoint
         run: |
-          curl -X POST ${{ secrets.APP_BASE_URL }}/api/internal/run-reminders \
+          curl -X POST ${{ secrets.APP_BASE_URL }}/api/notifications/internal/run-reminders \
           -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
