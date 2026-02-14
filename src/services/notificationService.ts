@@ -59,33 +59,50 @@ export const getUserReminders = async (userId: string) => {
 //Send email 
 export const processPendingReminders = async () => {
   const now = new Date();
-  console.log("Worker is running...")
-  const reminders = await Notification.find({
-    remindAt: { $lte: now },
-    isSent: false,
-  }).populate("eventId");
+  console.log("Worker is running...");
 
-  for (const reminder of reminders) {
-    const event: any = reminder.eventId;
+  while (true) {
+    const reminder = await Notification.findOneAndUpdate(
+      {
+        remindAt: { $lte: now },
+        isSent: false,
+      },
+      {
+        $set: { isSent: true, sentAt: new Date() },
+      },
+      { new: true }
+    ).populate("eventId");
 
-    await sendEmail({
-      to: reminder.email,
-      subject: `Reminder: ${event.title}`,
-      html: `
-        <h2>Event Reminder</h2>
-        <p>Your event <strong>${event.title}</strong> is coming up.</p>
-        <p><strong>Location:</strong> ${event.location}</p>
-        <p><strong>Starts at:</strong> ${new Date(event.startTime).toLocaleString("en-NG", {
-          timeZone: "Africa/Lagos",
-          dateStyle: "full",
-          timeStyle: "short",
-        })
-        }</p>
-      `,
-    });
+    if (!reminder) {
+      break; // no more pending reminders
+    }
 
-    reminder.isSent = true;
-    reminder.sentAt = new Date();
-    await reminder.save();
+    try {
+      const event: any = reminder.eventId;
+
+      await sendEmail({
+        to: reminder.email,
+        subject: `Reminder: ${event.title}`,
+        html: `
+          <h2>Event Reminder</h2>
+          <p>Your event <strong>${event.title}</strong> is coming up.</p>
+          <p><strong>Location:</strong> ${event.location}</p>
+          <p><strong>Starts at:</strong> ${new Date(event.startTime).toLocaleString("en-NG", {
+            timeZone: "Africa/Lagos",
+            dateStyle: "full",
+            timeStyle: "short",
+          })}</p>
+        `,
+      });
+
+    } catch (error) {
+      console.error("Failed to send reminder:", error);
+
+      // revert isSent if email failed
+      reminder.isSent = false;
+      reminder.sentAt = undefined;
+      await reminder.save();
+    }
   }
 };
+
