@@ -25,8 +25,7 @@ exports.env = {
         currency: "NGN",
     },
     email: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        resend: process.env.RESEND_API_KEY,
         from: process.env.EMAIL_FROM,
     },
 };

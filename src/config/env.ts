@@ -28,8 +28,7 @@ export const env = {
   },
 
   email: {
-    user: process.env.EMAIL_USER as string,
-    pass: process.env.EMAIL_PASS as string,
+    resend: process.env.RESEND_API_KEY as string, 
     from: process.env.EMAIL_FROM as string,
   },
 };

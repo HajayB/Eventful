@@ -1,15 +1,14 @@
-import nodemailer from "nodemailer";
 import QRCode from "qrcode";
 import { EventDocument } from "../models/eventModel";
 import { TicketDocument } from "../models/ticketModel";
-import { emailConfig } from "../config/email";
+import { resend, emailConfig } from "../config/email";
 import { EmailLog } from "../models/emailLogModel";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+
 interface SendTicketsEmailInput {
   to: string;
   event: EventDocument;
   tickets: TicketDocument[];
-  paymentId?: string; // optional but recommended
+  paymentId?: string;
 }
 
 export const sendTicketsEmail = async ({
@@ -18,19 +17,8 @@ export const sendTicketsEmail = async ({
   tickets,
   paymentId,
 }: SendTicketsEmailInput) => {
-  const transporter = nodemailer.createTransport({
-    host: emailConfig.host,
-    port: emailConfig.port,
-    secure: false,
-    family: 4,
-    auth: {
-      user: emailConfig.user,
-      pass: emailConfig.pass,
-    },
-  }as SMTPTransport.Options);
-
   try {
-    // 1️⃣ Generate QR images (both inline + attachments)
+    // 1️⃣ Generate QR codes (data URL for inline + buffer for attachments)
     const qrResults = await Promise.all(
       tickets.map(async (ticket, index) => {
         const dataUrl = await QRCode.toDataURL(ticket.qrPayload);
@@ -69,12 +57,14 @@ export const sendTicketsEmail = async ({
         <h3>📍 Event Details</h3>
         <ul>
           <li><strong>Event:</strong> ${event.title}</li>
-          <li><strong>Date & Time:</strong> ${new Date(event.startTime).toLocaleString("en-NG", {
-            timeZone: "Africa/Lagos",
-            dateStyle: "full",
-            timeStyle: "short",
-          })
-          }</li>
+          <li><strong>Date & Time:</strong> ${new Date(event.startTime).toLocaleString(
+            "en-NG",
+            {
+              timeZone: "Africa/Lagos",
+              dateStyle: "full",
+              timeStyle: "short",
+            }
+          )}</li>
           <li><strong>Location:</strong> ${event.location}</li>
         </ul>
 
@@ -90,16 +80,17 @@ export const sendTicketsEmail = async ({
       </div>
     `;
 
-    // 4️⃣ Attach QR images
+    // 4️⃣ Attachments (Resend format)
     const attachments = qrResults.map((qr) => ({
       filename: `ticket-${qr.index + 1}.png`,
-      content: qr.buffer,
-      contentType: "image/png",
+      content: qr.buffer.toString("base64"),
+      type: "image/png",
+      disposition: "attachment",
     }));
 
-    // 5️⃣ Send email
-    await transporter.sendMail({
-      from: `"${event.title}" <${emailConfig.from}>`,
+    // 5️⃣ Send via Resend
+    await resend.emails.send({
+      from: emailConfig.EMAIL_FROM,
       to,
       subject: `🎟 Your ticket${tickets.length > 1 ? "s" : ""} for ${event.title}`,
       html,

@@ -1,13 +1,5 @@
-import nodemailer from "nodemailer";
+import { resend } from "../config/email";
 import { env } from "../config/env";
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: env.email.user,
-    pass: env.email.pass,
-  },
-});
 
 interface SendEmailInput {
   to: string;
@@ -20,7 +12,7 @@ export const sendEmail = async ({
   subject,
   html,
 }: SendEmailInput) => {
-  await transporter.sendMail({
+  await resend.emails.send({
     from: env.email.from,
     to,
     subject,

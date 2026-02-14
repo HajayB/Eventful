@@ -4,23 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendTicketsEmail = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
 const qrcode_1 = __importDefault(require("qrcode"));
 const email_1 = require("../config/email");
 const emailLogModel_1 = require("../models/emailLogModel");
 const sendTicketsEmail = async ({ to, event, tickets, paymentId, }) => {
-    const transporter = nodemailer_1.default.createTransport({
-        host: email_1.emailConfig.host,
-        port: email_1.emailConfig.port,
-        secure: false,
-        family: 4,
-        auth: {
-            user: email_1.emailConfig.user,
-            pass: email_1.emailConfig.pass,
-        },
-    });
     try {
-        // 1️⃣ Generate QR images (both inline + attachments)
+        // 1️⃣ Generate QR codes (data URL for inline + buffer for attachments)
         const qrResults = await Promise.all(tickets.map(async (ticket, index) => {
             const dataUrl = await qrcode_1.default.toDataURL(ticket.qrPayload);
             const buffer = await qrcode_1.default.toBuffer(ticket.qrPayload);
@@ -71,15 +60,16 @@ const sendTicketsEmail = async ({ to, event, tickets, paymentId, }) => {
         </p>
       </div>
     `;
-        // 4️⃣ Attach QR images
+        // 4️⃣ Attachments (Resend format)
         const attachments = qrResults.map((qr) => ({
             filename: `ticket-${qr.index + 1}.png`,
-            content: qr.buffer,
-            contentType: "image/png",
+            content: qr.buffer.toString("base64"),
+            type: "image/png",
+            disposition: "attachment",
         }));
-        // 5️⃣ Send email
-        await transporter.sendMail({
-            from: `"${event.title}" <${email_1.emailConfig.from}>`,
+        // 5️⃣ Send via Resend
+        await email_1.resend.emails.send({
+            from: email_1.emailConfig.EMAIL_FROM,
             to,
             subject: `🎟 Your ticket${tickets.length > 1 ? "s" : ""} for ${event.title}`,
             html,
