@@ -1,116 +1,44 @@
-Eventful API 
+Eventful API
 
-A scalable event management and ticketing REST API built with Node.js, Express, MongoDB, and Paystack integration.
+A production-style event management and ticketing REST API built with Node.js, Express, MongoDB, and Paystack.
 
-Eventful allows users to create events, purchase tickets, receive reminders, process payments, and manage attendance using QR-based validation.
-
+Eventful enables event creation, secure ticket purchasing, QR-based validation, analytics tracking, and automated reminders — designed with real-world scalability and security considerations.
 
 #Overview
 
-Eventful is a backend-first event ticketing system designed with:
+Eventful is a backend-first event ticketing system focused on:
 
-Clean route structure
+Secure payment processing (Paystack + webhook verification)
 
-Strong validation rules
+Role-based access control (Creator / Eventee)
 
-Role-based access control
+QR-based ticket generation and scan validation
 
-Background reminder workers
+Background reminder processing (cron workers)
 
-Secure payment verification (Paystack)
+Strict validation and business rule enforcement
 
-QR-based ticket generation
+Idempotent webhook handling
 
-Modular architecture
+Modular, production-ready architecture
 
-Production-ready API design
-
-This project emphasizes:
+This project emphasizes real-world backend engineering practices:
 
 Data integrity
 
-Security
+Security-first design
 
-Strict request validation
+Clean REST semantics
 
 Separation of concerns
 
-Real-world scalability considerations
+Environment-driven configuration
 
+#Architecture
 
-#Tech Stack
+#Route Domains
+All routes are logically separated by responsibility:
 
-Node.js
-
-Express.js
-
-MongoDB + Mongoose
-
-TypeScript
-
-Paystack (Payment Gateway)
-
-Node-Cron (Worker Jobs)
-
-QR Code Generation
-
-JWT-based authentication
-
-Role-based middleware
-
-
-
-#Requirements
-
-Before running the project, ensure you have:
-
-Node.js (v18+ recommended)
-
-MongoDB (local or cloud e.g., Atlas)
-
-Paystack test keys
-
-LocalTunnel (for webhook testing)
-
-npm or yarn
-
-
-#Create a .env file in the root:
-
-PORT=3000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret
-PAYSTACK_SECRET_KEY=your_paystack_secret
-PAYSTACK_CALLBACK_URL=http://localhost:4000/paystack/callback
-FRONTEND_URL=http://localhost:4000
-JWT_SECRET=Jwt_secret
-JWT_EXPIRES_IN=30d
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=email_adress
-EMAIL_FROM=email_name
-EMAIL_PASS=yourEmailPass
-
-
-#LocalTunnel Requirement (Webhook Important)
-
-Paystack needs a publicly accessible URL to send webhook events.
-
-You must expose port 4000 specifically for the payment webhook.
-
-Start your server on port 4000 and run:
-
-lt --port 4000
-
-Use the generated public URL as your Paystack webhook URL:
-
-https://your-url.loca.lt/payments/webhook
-
-Without this, Paystack verification will fail locally.
-
-#API Route Structure
-
-All routes are prefixed logically by domain responsibility:
 /auth
 /events
 /tickets
@@ -118,23 +46,134 @@ All routes are prefixed logically by domain responsibility:
 /analytics
 /notifications
 
-#Authentication Routes (/auth)
-Method	Route	        Description
-POST	/auth/register	Register new user
-POST	/auth/login	    Login user
-POST	/auth/logout	Logout user
 
-Authentication is JWT-based.
+Controller-service separation is enforced to keep business logic isolated from transport logic.
+Background workers are isolated from the main API process and require database access.
 
-#Event Routes (/events)
-Method	Route	    Description
-POST	/events	    Create event (Creator only)
-GET	    /events	    Get all available events
-GET	    /events/:id	Get single event
-PUT	    /events/:id	Update event (Creator only)
-DELETE	/events/:id	Delete event (Creator only)
+#Tech Stack
 
-Includes:
+Node.js (v18+)
+
+Express.js
+
+TypeScript
+
+MongoDB + Mongoose
+
+JWT Authentication
+
+Paystack (Payment Gateway)
+
+Node-Cron (Background Jobs)
+
+QR Code generation
+
+Role-based Middleware
+
+Environment Variables
+
+Create a .env file in the root directory:
+
+PORT=4000
+MONGO_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_secret
+JWT_EXPIRES_IN=30d
+
+PAYSTACK_SECRET_KEY=your_paystack_secret
+PAYSTACK_CALLBACK_URL=http://localhost:4000/payments/webhook
+
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM=your_verified_sender_email
+
+CRON_SECRET=your_internal_worker_secret
+
+#Payment Flow (Secure & Idempotent)
+
+User selects ticket quantity
+
+/payments/initialize creates a Paystack transaction
+
+User completes payment
+
+Paystack sends a webhook to /payments/webhook
+
+Webhook signature is verified
+
+Payment status is confirmed
+
+Ticket is created only after successful verification
+
+QR code payload is generated
+
+#Security measures:
+
+Signature verification
+
+Reference validation
+
+Payment status enforcement
+
+Duplicate transaction prevention
+
+Idempotent webhook handling (duplicate callbacks do not generate duplicate tickets)
+
+#Authentication & Authorization
+JWT-based authentication.
+
+Two roles:
+
+User (Eventee)
+
+Creator
+
+Role enforcement ensures:
+
+Only creators can create/update/delete events
+
+Only ticket owners can view their tickets
+
+Only event creators can scan tickets
+
+Ownership checks are enforced at route level
+
+No route trusts client input blindly.
+
+#Validation Philosophy
+POST Requests
+
+Fully validated
+
+Required fields enforced
+
+Type checking applied
+
+Business logic rules validated
+
+PUT Requests
+
+Partial updates allowed
+
+Field types validated
+
+Invalid state transitions prevented
+
+Additional validation layers include:
+
+Date sanity checks
+
+Ticket quantity enforcement
+
+Scan state validation
+
+Duplicate transaction prevention
+
+Role and ownership checks
+
+#Core Features
+#Events
+
+Create, update, delete (Creator only)
 
 Ticket limits
 
@@ -142,175 +181,140 @@ Date validation
 
 Ownership enforcement
 
-#Ticket Routes (/tickets)
-Method	Route	                Description
-GET	    /tickets/me	            Get user's tickets
-GET	    /tickets/:ticketId/qr	Get ticket qrPayload 
-POST	/tickets/scan	        Scan ticket (Mark as used)(CREATOR)
+#Tickets
 
-Features:
+QR payload generation
 
-QR code generation
 Duplicate prevention
-Scan validation
+
 Attendance tracking
+
+Scan validation
+
 isScanned filtering
 
+#Payments
 
-#Payment Routes (/payments)
-Method	    Route	                            Description
-POST	    /payments/initialize	            Initialize Paystack payment
-POST	    /payments/webhook	                Paystack webhook endpoint
-GET	        /payments/resend-ticket/:paymentRef	Resend purchased ticket manually
+Secure Paystack integration
 
-Payment Flow:
-User selects ticket quantity
-Payment initialized
-User pays via Paystack
-Paystack sends webhook
-Webhook verifies signature
-Ticket is created only after successful verification
-QR code generated
+Webhook verification
 
-Security Measures:
-Signature verification
-Reference validation
-Payment status enforcement
-Idempotent handling
+Manual ticket resend endpoint
 
-#Analytics Routes (/analytics)
-Method	 Route	                            Description
-GET	    /analytics/creator/:eventId	        Single Event performance
-GET	    /analytics/creator	                Creator Alltime stats
-GET     /analytics/creator/payments         Total verfied Payments
-GET     /analytics/eventee/paid             Total event payments
-GET     /analytics/eventee/attended         Total event attended
-GET     /analytics/eventee/unattended       Total event paid for but unattended
-Includes:
-Ticket sales count
+#Analytics
+
+Event performance metrics
+
 Revenue tracking
-Attendance rate
-Scanned vs unscanned ratio
+
+Attendance rate calculation
+
+Creator lifetime stats
+
+Eventee participation stats
+
+#Notifications
+
+Event reminder scheduling
+
+Background reminder processing
+
+Manual worker trigger endpoint
+
+Internal reminder endpoint requires:
+
+x-cron-secret: <CRON_SECRET>
 
 
-#Notification Routes (/notifications)
-Method	 Route	                            Description
-POST    /notifications/reminder             Users create a reminder for an event
-GET     /notifications/reminder/me          Users get all sent reminders 
-
-Used internally by worker jobs.
-Includes:
-Event reminders
-Email scheduling
-Background processing
-
+Requests without this header are rejected.
 
 #Background Workers
+
 Implemented using node-cron.
+
 Worker checks every minute for:
-Upcoming reminders set
+
+Upcoming reminders
+
 Unsent notifications
 
-Important:
-Workers must have database access.
-They can be hosted separately from the main API if needed.
+Workers can be deployed separately (e.g., background service on Render, Railway, etc.) as long as they share database access.
+
+#Webhook Testing (Local Development)
+
+Paystack requires a public URL to deliver webhooks.
+
+Expose your server:
+
+lt --port 4000
 
 
-#Validation Philosophy (Very Important)
-Validation is strict and intentional.
+Use the generated URL:
 
-POST requests:
-Fully validated
-All required fields enforced
-Type checking applied
-Business logic validation included
-
-PUT:
-Allows partial updates
-Still validates field types
-Prevents invalid state mutations
-
-Additional Validation Layers:
-Role-based access checks
-Ownership checks
-Date sanity checks
-Ticket quantity
-Payment verification checks
-Scan status verification
-Duplicate transaction prevention
-No route trusts client input blindly.
+https://your-url.loca.lt/payments/webhook
 
 
-#Role-Based Access
-Two roles:
-User (Eventee)
-Creator
+Add this to your Paystack dashboard.
 
-Middleware ensures:
-Only creators can create events
-Only ticket owners can view only their tickets
-Only event creators can see event ticket lists
-Only event creators can scan tickets
+Without a public webhook endpoint, payment verification will fail locally.
 
+#Testing Strategy
 
-#Architectural Design Decisions
-Modular folder structure
-Controller-service separation
-Middleware-based validation
-Environment-driven configuration
-Clean REST semantics
-Resource-based routing
-Background task isolation
-Webhook security-first approach
+Recommended tools:
 
+Postman / Thunder Client
 
-#Testing Considerations
-Use Postman or Thunder Client
-Use Paystack test keys
-Use LocalTunnel for webhook testing
-Test duplicate payment attempts
-Test scan edge cases
-Test expired events
+Paystack test keys
 
+LocalTunnel for webhook simulation
+
+Edge cases to test:
+
+Duplicate webhook calls
+
+Expired events
+
+Scan attempts on used tickets
+
+Invalid signature attempts
+
+Partial update validation
 
 #Future Improvements
 
-Pagination for:
-Viewing tickets
-Viewing events
-Attended events
+Pagination for events and tickets
+
+Search & filtering
+
+Image uploads for events
 
 Caching layer
 
-Event search & filtering
-
-File/image uploads for events
-
 Full frontend integration
 
-
-Running Locally
+#Running Locally
 
 Install dependencies:
 
 npm install
 
 
-Run development server:
+Start development server:
 
 npm run dev
 
+#Project Focus
 
-For webhook testing:
-npm run dev
-lt --port 4000 in a seperate terminal
-copy given url and paste in paystack dashboard (example:https://your-url.loca.lt/payments/webhook)
+This project demonstrates:
 
+RESTful API architecture
 
-Author conclusion
-Built as a backend-focused production-style event system demonstrating:
-API architecture
-Payment integration
-Secure webhook handling
-Background processing
+Secure payment integration
+
+Webhook verification best practices
+
+Role-based access control
+
+Background task processing
+
 Real-world business logic enforcement

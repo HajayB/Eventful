@@ -306,6 +306,13 @@ const ReminderResponseSchema = registry.register(
   })
 );
 
+const cronResponseSchema = registry.register(
+  "cronResponse",
+  z.object({
+    message:z.string(),
+  })
+);
+
 /**
  * STEP 2 — Register Routes
  */
@@ -963,6 +970,27 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.array(ReminderResponseSchema),
+        },
+      },
+    },
+    401: {
+      description: "Unauthorized",
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/notifications/internal/run-reminders",
+  tags: ["Notifications"],
+  description: "Run worker for reminders",
+  security: [{ bearerAuth: [] }, {xCronSecret:[]}],
+  responses: {
+    200: {
+      description: "Reminders processed",
+      content: {
+        "application/json": {
+          schema: z.array(cronResponseSchema),
         },
       },
     },
