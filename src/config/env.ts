@@ -9,12 +9,15 @@ dotenv.config({
 });
 
 export const env = {
+  appUrl:process.env.APP_BASE_URL as string,
   port: Number(process.env.PORT) || 4000,
   nodeEnv: process.env.NODE_ENV || "development",
 
   jwt: {
-    secret: process.env.JWT_SECRET as string,
-    expiresIn: process.env.JWT_EXPIRES_IN ?? "7d" as SignOptions["expiresIn"],
+    accessExpiresIn:process.env.JWT_ACCESS_EXPIRES_IN ?? "15m" as SignOptions["expiresIn"],
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? "7d" as SignOptions["expiresIn"],
+    accessSecret:process.env.ACCESS_SECRET as string,
+    refreshSecret:process.env.REFRESH_SECRET as string,
   },
 
   mongodbUri: process.env.MONGO_URI as string,
@@ -30,5 +33,8 @@ export const env = {
   email: {
     resend: process.env.RESEND_API_KEY as string, 
     from: process.env.EMAIL_FROM as string,
+    admin_email: process.env.ADMIN_EMAIL as string,
+    verificationSecret:process.env.EMAIL_VERIFICATION_SECRET as string,
+    resetSecret:process.env.EMAIL_RESET_SECRET as string,
   },
 };

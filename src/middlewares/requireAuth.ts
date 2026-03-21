@@ -1,40 +1,92 @@
 import { Request, Response, NextFunction } from "express";
-import * as jwt from "jsonwebtoken";
-import { env } from "../config/env";
+import {signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken} from "../utils/jwt";
+import {env} from "../config/env";
+import { User } from "../models/userModel";
 
-interface JwtPayload {
-  userId: string;
-  email:string;
-  role: "CREATOR" | "EVENTEE";
-}
-
-export const requireAuth = (
+export const requireAuth = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
+  try{
+    const accessToken = req.cookies?.accessToken;
+    const refreshToken = req.cookies?.refreshToken;
+    if (!accessToken && !refreshToken) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+    let decoded:any;
+    let user:any;
 
-  const token = authHeader.split(" ")[1];
+    // -----------------------------
+    // 1️⃣ Try access token first
+    // -----------------------------
+    if (accessToken) {
+      try {
+        decoded = verifyAccessToken(accessToken);
+      } catch (err:any) {
+        if (err.name !== 'TokenExpiredError') {
+          return res.status(401).json({ message: 'Access token invalid' });
+        }
+        // If Expired, will try refresh token
+      }
+    }
 
-  try {
-    const decoded = jwt.verify(
-      token,
-      env.jwt.secret
-    ) as JwtPayload;
+        // -----------------------------
+    // 2️⃣ Check refresh token if access token expired or missing
+    // -----------------------------
+    if (!decoded && refreshToken) {
+      try {
+        const refreshDecoded = verifyRefreshToken(refreshToken);
+        user = await User.findById(refreshDecoded.userId);
+        if (!user) return res.status(401).json({ message: 'User no longer exists' });
 
-    req.user = {
-      userId: decoded.userId as any,
-      email: decoded.email,
-      role: decoded.role,
-    };
+        // Issue new access token
+        const newAccessToken = signAccessToken({
+          userId: user._id,
+          email: user.email,
+          role: user.role,
+        })
+        // Set new cookie
+        res.cookie('accessToken', newAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+        });
 
+        decoded = {
+          userId: user._id,
+          email: user.email,
+          role: user.role,
+        };
+      } catch (refreshErr) {
+        return res.status(401).json({ message: 'Refresh token invalid or expired' });
+      }
+    }
+      // -----------------------------
+    // 3️⃣ Get user if not already fetched
+    // -----------------------------
+    if (!user) {
+      user = await User.findById(decoded.userId);
+      if (!user) return res.status(401).json({ message: 'User no longer exists' });
+    }
+
+    // -----------------------------
+    // 4️⃣ Check password changed
+    // -----------------------------
+    if (user.passwordChangedAt) {
+      const passwordChangedTime = Math.floor(user.passwordChangedAt.getTime() / 1000);
+      if (decoded.iat < passwordChangedTime) {
+        return res.status(401).json({ message: 'Password changed. Please log in again.' });
+      }
+    }
+
+    req.user = user;
     next();
+
   } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error('Auth Middleware Error:', error);
+    return res.status(401).json({ message: 'Authentication failed' });
   }
+
 };

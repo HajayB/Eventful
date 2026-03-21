@@ -1,4 +1,4 @@
-import { Event } from "../models/eventModel";
+import { Event, EventDocument } from "../models/eventModel";
 
 interface CreateEventInput {
   creatorId: string;
@@ -70,15 +70,61 @@ export const createEventService = async (
     ...rest,
   };
 };
-//get all events
-export const getAllEventsService = async () => {
-  const events = await Event.find({  
-    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
-  })
-  .select("-__v")
-  .sort({ startTime: 1 });
 
-  return events;
+//get all events
+export const getAllEventsService = async (page=1, limit=4, search="") => {
+
+  const skip = (page - 1) * limit;
+
+    const now = new Date();
+    const baseConditions: any[] = [
+      { $expr: { $lt: ["$ticketsSold", "$totalTickets"] } },
+      {
+        $or: [
+          { startTime: { $gte: now } },
+          { endTime: { $gte: now } },
+        ],
+      },
+    ];
+
+    const filter: any = {
+      $and: baseConditions,
+    };
+    if (search) {
+      if (search.length >= 3) {
+        filter.$text = { $search: search }; // use text
+      } else {
+        filter.$and.push({
+          title: { $regex: search, $options: "i" }, // fallback
+        });
+      }
+    }
+    const [events, total] = await Promise.all([
+      Event.find(
+        filter,
+        search ? { score: { $meta: "textScore" } } : {}
+      )
+        .select("-__v")
+        .sort(
+          search
+            ? { score: { $meta: "textScore" } }
+            : { startTime: 1 }
+        )
+        .skip(skip)
+        .limit(limit),
+
+      Event.countDocuments(filter),
+    ]);
+
+  return {
+    data: events,
+    meta: {
+      total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 //get single event
@@ -96,15 +142,45 @@ export const getSingleEventService = async (eventId: string) => {
 };
 
 
-//get creator event 
 export const getCreatorEventsService = async (
-  creatorId: string
+  creatorId: string, page:number =1, limit:number=4
 ) => {
-  const events = await Event.find({ creatorId }).sort({
-    startTime: 1,
-  }).select("-__v");
+  const skip = (page -1 ) * limit;
+  const now = new Date();
+  const pastEventsFilter = {creatorId,
+  startTime: { $lt: now },
+  $expr: { $lt: ["$ticketsSold", "$totalTickets"] }
+};
+  const activeEventsFilter = {creatorId, 
+  startTime: { $gt: now },
+  $expr: { $lt: ["$ticketsSold", "$totalTickets"] }
+};
 
-  return events;
+  const activeEvents = await Event.find(activeEventsFilter) 
+  .select("-__v")
+  .sort({startTime:1})
+  .skip(skip)
+  .limit(limit);
+
+  const pastEvents = await Event.find(pastEventsFilter) 
+  .select("-__v")
+  .sort({startTime:1})
+  .skip(skip)
+  .limit(limit);
+
+  
+  const totalEvents = await Event.countDocuments({creatorId});
+
+  return {
+    CurrentEvents: activeEvents, 
+    pagination:{
+      totalEvents:totalEvents, 
+      page, 
+      limit, 
+      totalPages: Math.ceil(totalEvents/limit),
+    },
+    OldEvents:pastEvents,
+  };
 };
 
 //update an event's details (creator only)

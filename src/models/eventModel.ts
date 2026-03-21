@@ -70,6 +70,7 @@ const eventSchema = new Schema<EventDocument>(
     coverImage: {
       type: String,
       trim: true,
+      default:"https://placehold.co/600x400?text=EventFul+CoverImage",
     },
     
 
@@ -83,4 +84,14 @@ const eventSchema = new Schema<EventDocument>(
   }
 );
 
+// Search index
+eventSchema.index({ title: "text", location: "text", });
+
+// Sorting & filtering
+eventSchema.index({ startTime: 1 });
+
+// Better date queries
+eventSchema.index({ startTime: 1, endTime: 1 });
+
+eventSchema.index({ startTime: 1, ticketsSold: 1, totalTickets: 1 });
 export const Event = mongoose.model<EventDocument>("Event", eventSchema);

@@ -1,6 +1,15 @@
 import { User } from "../models/userModel";
 import { hashPassword, comparePassword } from "../utils/password";
-import { signToken } from "../utils/jwt";
+import { signAccessToken,signRefreshToken, generateResetPasswordToken, verifyPasswordResetToken } from "../utils/jwt";
+import crypto from "crypto";
+import {resetPasswordEmail} from "./emailService";
+//blacklist used tokens for password reset to prevent reuse
+const usedResetTokens = new Set();
+
+//helper for refresh token hashing
+const hashToken = (token:any) => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
 
 type UserRole = "CREATOR" | "EVENTEE";
 
@@ -16,6 +25,19 @@ interface LoginInput {
   password: string;
 }
 
+interface resetInput {
+  to: string;
+}
+
+interface Payload{
+  email:string,
+  userId:string,
+}
+interface ResetPasswordInput{
+  token:string;
+  newPassword:string;
+  confirmPassword:string;
+}
 export const registerUser = async ({
   name,
   email,
@@ -40,7 +62,7 @@ export const registerUser = async ({
   });
 
   // 4. Generate token
-  const token = signToken({
+  const token = signAccessToken({
     userId: user._id.toString(),
     email:user.email,
     role: user.role,
@@ -74,16 +96,73 @@ export const loginUser = async ({
   }
 
   // 3. Generate token
-  const token = signToken({
+  const accessToken = signAccessToken({
     userId: user._id.toString(),
     email:user.email,
     role: user.role,
   });
+
+  const refreshToken = signRefreshToken({
+    userId: user._id.toString(),
+    email:user.email,
+    role: user.role,
+  })
+
   const userObject = user.toObject();
   const { password: _, __v, ...safeUser } = userObject;
 
 return {
   user: safeUser,
-    token,
+    accessToken,
+    refreshToken
   };
 };
+
+export const resetPasswordLink = async({to}:resetInput)=>{
+// to is email address
+  const user = await User.findOne({email:to});
+  if (!user) {
+      return { message: "If this email exists, a reset link has been sent" };
+  }
+  const token = generateResetPasswordToken({userId:user._id.toString(),email:user.email});
+  await resetPasswordEmail({to,token})
+  return{message:"Reset email sent"}
+}
+
+export const resetPassword = async ({token, newPassword, confirmPassword}:ResetPasswordInput)=>{
+  if(!token){
+    throw new Error("Invalid or missing token");
+  }
+
+  if(usedResetTokens.has(token)){
+    throw new Error("Token has already been used")
+  }
+
+  const payload = verifyPasswordResetToken(token) as Payload;
+  if(!payload || !payload.email){
+    throw new Error("Token expired or invalid")
+  }
+  const email = payload.email;
+  if(!newPassword || !confirmPassword){
+    throw new Error("New password and confirmPassword are required")
+  }
+  if(newPassword.length < 8){
+    throw new Error("Password is below 8 characters")
+  }
+  const user = await User.findOne({email});
+
+  if(!user){
+    throw new Error("User does not exist")
+  }
+  if(newPassword !== confirmPassword){
+    throw new Error("New password and confirm password don't match")
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+  user.password = hashedPassword;
+  await user.save();
+
+  usedResetTokens.add(token);
+
+  return ({Message:"Password Reset Successfully"});
+}

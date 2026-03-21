@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createReminderController,fetchUserReminders } from "../controllers/notificationController";
+import { createReminderController,fetchUserReminders, sendContactMessage } from "../controllers/notificationController";
 import { requireAuth } from "../middlewares/requireAuth";
 import { validateRequest } from "../middlewares/validateRequest";
 import { createReminderSchema } from "../validation/notificationValidation";
@@ -19,6 +19,7 @@ router.get(
   fetchUserReminders
 );
 
+router.post("/contact", sendContactMessage);
 
 router.post("/internal/run-reminders", async (req, res) => {
   const secret = req.headers["x-cron-secret"];

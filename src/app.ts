@@ -2,6 +2,8 @@ import express from "express";
 import { setupSwagger } from "./swagger";
 import routes from "./routes";
 import { Request, Response } from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser"
 const app = express();
 setupSwagger(app);
 
@@ -10,8 +12,13 @@ app.use(
   "/api/payments/webhook",
   express.raw({ type: "application/json" })
 );
+app.use(cors({
+  origin:"http://localhost:5173",
+  credentials:true,
+}))
 // Normal JSON for other routes
 app.use(express.json());
+app.use(cookieParser())
 
 // Mount all routes under /api
 app.use("/api", routes);

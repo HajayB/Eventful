@@ -14,8 +14,11 @@
   "description": "",
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",
+    "@types/cookie-parser": "^1.4.10",
     "axios": "^1.13.4",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
@@ -29,11 +32,13 @@
     "react": "^19.2.4",
     "resend": "^6.9.2",
     "swagger-ui-express": "^5.0.1",
+    "ts-node-dev": "^2.0.0",
     "yamljs": "^0.3.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",

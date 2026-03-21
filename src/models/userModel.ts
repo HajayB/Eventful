@@ -9,6 +9,7 @@ export interface UserDocument extends Document {
   password: string;
   role: UserRole;
   createdAt: Date;
+  passwordChangedAt:Date;
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -38,6 +39,7 @@ const userSchema = new Schema<UserDocument>(
       enum: ["CREATOR", "EVENTEE"],
       default: "EVENTEE",
     },
+    passwordChangedAt: Date,
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

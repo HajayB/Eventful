@@ -1,7 +1,7 @@
 // src/controllers/authController.ts
 import { Request, Response } from "express";
 import { registerUser, loginUser } from "../services/authService";
-
+import {cookieOptions} from "../utils/cookie"
 /**
  * POST /auth/register
  */

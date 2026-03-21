@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { createEventReminder, getUserReminders } from "../services/notificationService";
-
+import { sendContactEmail } from "../services/emailService";
 /**
  * CREATE EVENT REMINDER
  * POST /notifications/reminder
@@ -52,4 +52,27 @@ export const fetchUserReminders = async (req: Request, res: Response) => {
     message: "Reminders fetched successfully",
     reminders,
   });
+};
+
+
+export const sendContactMessage = async (req: Request, res: Response) => {
+  try {
+    const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    await sendContactEmail({ name, email, message });
+
+    return res.status(200).json({
+      message: "Message sent successfully. Check your email ✉️",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      message: error.message || "Failed to send message",
+    });
+  }
 };

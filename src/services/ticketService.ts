@@ -1,5 +1,5 @@
 // src/services/ticketService.ts
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 import { Ticket } from "../models/ticketModel";
 import { Event } from "../models/eventModel";
@@ -9,46 +9,58 @@ interface IssueTicketsInput {
   eventId: string;
   eventeeId: string;
   quantity: number;
-  paymentRef: string; // string, not ObjectId
+  paymentRef: string;
 }
-
+//TICKET CREATION
 export const issueTicketsAfterPayment = async ({
   eventId,
   eventeeId,
   quantity,
   paymentRef,
 }: IssueTicketsInput) => {
-  const event = await Event.findById(eventId);
-  if (!event) {
-    throw new Error("Event not found");
+  const session = await mongoose.startSession();
+
+  try {
+    return await session.withTransaction(async () => {
+     //FIND EVENT 
+      const event = await Event.findById(eventId).session(session);
+      if (!event) throw new Error("Event not found");
+
+      // IDEMPOTENCY 
+      const existingTickets = await Ticket.find({ paymentRef }).session(session);
+
+      if (existingTickets.length === quantity) {
+        return existingTickets;
+      }
+
+     // CAPACITY CHECK 
+      if (event.ticketsSold + quantity > event.totalTickets) {
+        throw new Error("Not enough tickets available");
+      }
+
+      // CREATE TICKETS 
+      const ticketsPayload = Array.from({ length: quantity }).map(() => ({
+        eventId: new Types.ObjectId(eventId),
+        eventeeId: new Types.ObjectId(eventeeId),
+        paymentRef,
+        qrPayload: generateQrPayload(),
+        isScanned: false,
+      }));
+
+      const createdTickets = await Ticket.insertMany(ticketsPayload, { session });
+
+      // UPDATE EVENT 
+      event.ticketsSold += quantity;
+      await event.save({ session });
+
+      return createdTickets;
+    });
+  } finally {
+    session.endSession();
   }
-
-  //return existing tickets if already issued
-  const existingTickets = await Ticket.find({ paymentRef });
-  if (existingTickets.length > 0) {
-    return existingTickets;
-  }
-
-  //Create tickets
-  const tickets = Array.from({ length: quantity }).map(() => ({
-    eventId: new Types.ObjectId(eventId),
-    eventeeId: new Types.ObjectId(eventeeId),
-    paymentRef,
-    qrPayload: generateQrPayload(),
-    isScanned: false,
-  }));
-
-  const createdTickets = await Ticket.insertMany(tickets);
-
-  //Update tickets sold ONCE
-  event.ticketsSold += quantity;
-  await event.save();
-
-  return createdTickets;
 };
 
-
-
+// SCAN TICKET SERVICE
 
 interface ScanTicketInput {
   qrPayload: string;
@@ -61,39 +73,43 @@ export const scanTicket = async ({
   eventId,
   creatorId,
 }: ScanTicketInput) => {
-  // 1. Find ticket
-  const ticket = await Ticket.findOne({ qrPayload });
-  if (!ticket) {
-    throw new Error("Invalid ticket");
-  }
+// FIND TICKET + EVENT 
+  const ticket = await Ticket.findOne({ qrPayload }).populate("eventId");
 
-  // 2. Check event match
-  if (ticket.eventId.toString() !== eventId) {
+  if (!ticket) throw new Error("Invalid ticket");
+
+  const event = ticket.eventId as any;
+
+// VALIDATIONS 
+
+  if (event._id.toString() !== eventId) {
     throw new Error("Ticket does not belong to this event");
   }
 
-  // 3. Ensure event belongs to creator
-  const event = await Event.findById(eventId);
-  if (!event || event.creatorId.toString() !== creatorId) {
+  if (event.creatorId.toString() !== creatorId) {
     throw new Error("Unauthorized to scan this ticket");
   }
 
-  // 4. Check if already scanned
   if (ticket.isScanned) {
     throw new Error("Ticket already scanned");
   }
 
-  // 5. Mark as scanned
+  /* -------- UPDATE -------- */
   ticket.isScanned = true;
   ticket.scannedAt = new Date();
+
   await ticket.save();
 
-  return ticket;
+  return {
+    id: ticket._id,
+    eventId: ticket.eventId,
+    scannedAt: ticket.scannedAt,
+  };
 };
 
-const generateQrPayload = (): string => {
-  return crypto.randomBytes(32).toString("hex");
-};
+/* ============================================================
+   GET EVENTEE TICKETS
+============================================================ */
 
 interface GetEventeeTicketsInput {
   eventeeId: string;
@@ -108,13 +124,8 @@ export const getEventeeTickets = async ({
     eventeeId: new Types.ObjectId(eventeeId),
   };
 
-  if (status === "used") {
-    query.isScanned = true;
-  }
-
-  if (status === "unused") {
-    query.isScanned = false;
-  }
+  if (status === "used") query.isScanned = true;
+  if (status === "unused") query.isScanned = false;
 
   const tickets = await Ticket.find(
     query,
@@ -132,13 +143,18 @@ export const getEventeeTickets = async ({
     })
     .sort({ createdAt: -1 })
     .lean();
-  
+
   return tickets.map((ticket) => ({
     ...ticket,
     status: ticket.isScanned ? "USED" : "UNUSED",
     hasQr: !ticket.isScanned,
   }));
-  
 };
 
+/* ============================================================
+   QR GENERATOR
+============================================================ */
 
+const generateQrPayload = (): string => {
+  return crypto.randomBytes(32).toString("hex");
+};

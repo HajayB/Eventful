@@ -11,6 +11,16 @@ import {
   deleteEventService,
 } from "../services/eventService";
 import { Event } from "../models/eventModel";
+//INVALIDATE CACHE
+export const invalidateEventsCache = () => {
+  const keys = cache.keys(); // gets ALL keys
+
+  const eventKeys = keys.filter((key) => key.startsWith("events:all:"));
+
+  eventKeys.forEach((key) => {
+    cache.del(key);
+  });
+};
 /**
  * CREATE EVENT (CREATOR)
  */
@@ -24,7 +34,7 @@ export const createEvent = async (req: Request, res: Response) => {
     });
 
     // Invalidate public events cache
-    await cache.del("events:all");
+    await invalidateEventsCache()
 
 
     res.status(201).json(event);
@@ -32,28 +42,39 @@ export const createEvent = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+const parseQuery = (query: any) => ({
+  page: Number(query.page) || 1,
+  limit: Number(query.limit) || 4,
+  search: String(query.search || ""),
+});
+const buildEventsCacheKey = (parseQuery:any) => {
+  const { page = 1, limit = 4, search = "" } = parseQuery;
+
+  return `events:all:page=${page}:limit=${limit}:search=${search}`;
+};
 
 /**
  * GET ALL EVENTS (PUBLIC)
  */
 export const getAllEvents = async (req: Request, res: Response) => {
   try {
-    const cacheKey = "events:all";
+    const parsed = parseQuery(req.query);
+
+    const cacheKey = buildEventsCacheKey(parsed); // ✅ FIXED
 
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.status(200).json(cached);
     }
+    const { page, limit, search } = parseQuery(req.query)
+    const events = await getAllEventsService(page, limit, search);
 
-    const events = await getAllEventsService();
-
-    cache.set(cacheKey, events);
-
-    res.status(200).json(events);
+    cache.set(cacheKey, events, 60); // TTL = 60 seconds
+    await invalidateEventsCache();
+    return res.status(200).json(events);
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message });
   }
-    catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
 };
 
 /**
@@ -79,22 +100,20 @@ export const getSingleEvent = async (req: Request, res: Response) => {
   }
 };
 
-
-/**
- * GET CREATOR EVENTS
- */
 export const getCreatorEvents = async (req: Request, res: Response) => {
   try {
     const creatorId = req.user!.userId.toString();
 
-    const events = await getCreatorEventsService(creatorId);
+    
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
 
+    const events = await getCreatorEventsService(creatorId, page, limit);
     res.status(200).json(events);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
-
 /**
  * UPDATE EVENT
  */
@@ -110,8 +129,7 @@ export const updateEvent = async (req: Request, res: Response) => {
     );
 
     // Invalidate caches
-    await cache.del("events:all");
-    await cache.del(`events:${eventId}`);
+    await invalidateEventsCache()
     
 
     res.status(200).json(updatedEvent);
@@ -131,8 +149,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
     await deleteEventService(eventId, creatorId);
 
     // Invalidate caches
-    await cache.del("events:all");
-    await cache.del(`events:${eventId}`);
+    await invalidateEventsCache();
     
 
     res.status(200).json({message:"Event deleted 🗑"});
