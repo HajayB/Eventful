@@ -8,7 +8,6 @@ export const creatorDashboard = async (
 ) => {
   try {
     const creatorId = req.user!.userId.toString();
-
     const dashboard = await getCreatorDashboard(creatorId);
 
     return res.status(200).json(dashboard);

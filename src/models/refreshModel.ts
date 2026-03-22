@@ -56,7 +56,7 @@ RefreshSchema.virtual("isExpired").get(function (this: RefreshTokenDocument) {
 RefreshSchema.virtual("isActive").get(function (this: RefreshTokenDocument) {
   return !this.revokedAt && !this.isExpired;
 });
-export const Refresh = mongoose.model<RefreshTokenDocument>(
-  "Payment",
+export const RefreshToken = mongoose.model<RefreshTokenDocument>(
+  "RefreshToken",
   RefreshSchema
 );
