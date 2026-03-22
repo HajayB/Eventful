@@ -298,5 +298,5 @@ export const resetPassword = async ({token, newPassword, confirmPassword}:ResetP
 
   usedResetTokens.add(token);
 
-  return {Message:"Password Reset Successfully"};
+  return {message:"Password Reset Successfully"};
 }

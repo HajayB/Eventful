@@ -16,8 +16,7 @@ interface SendResetEmail{
   token:string,
 }
 export const resetPasswordEmail = async ({to, token}:SendResetEmail) => {
-  const resetLink = `${emailConfig.appUrl}/api/auth/reset-password?token=${token}`;
- 
+  const resetLink = `${emailConfig.frontendUrl}/reset-password?token=${token}`;
   try {
     await resend.emails.send({
       from: emailConfig.EMAIL_FROM,

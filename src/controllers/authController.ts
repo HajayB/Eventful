@@ -122,8 +122,19 @@ export const logoutController = async (req: Request, res: Response) => {
     }
 
     // clear cookies
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+    });
+    // res.clearCookie("accessToken");
+    // res.clearCookie("refreshToken");
 
     res.json({ message: "Logged out successfully" });
   } catch (err: any) {

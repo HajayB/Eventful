@@ -9,7 +9,8 @@ dotenv.config({
 });
 
 export const env = {
-  appUrl:process.env.APP_BASE_URL as string,
+  appUrl:process.env.API_BASE_URL as string,
+  frontendUrl:process.env.FRONTEND_BASE_URL as string,
   port: Number(process.env.PORT) || 4000,
   nodeEnv: process.env.NODE_ENV || "development",
 
