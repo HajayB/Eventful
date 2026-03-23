@@ -33,7 +33,7 @@ export const scanTicketController = async (
         valid: true,
         status: "USED",
         message: "Ticket is valid and has been verified",
-        ticketId: ticket._id,
+        ticketId: ticket.id,
         scannedAt: ticket.scannedAt,
       });
     } catch (error: any) {
