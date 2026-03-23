@@ -246,22 +246,22 @@ const recentActivityRaw = await Payment.find(
   }
 )
   .sort({ createdAt: -1 })
-  .limit(5)
+  .limit(3)
   .populate("eventId", "title")
   .populate("userId", "name email")
   .lean();
-
+  
 const recentActivity = recentActivityRaw.map(payment => {
   const eventTitle = (payment.eventId as any)?.title;
+  const buyerName = (payment.userId as any)?.name;
   return {
     eventTitle,
     purchasedAt: payment.createdAt,
-    quantity: payment.quantity,
+    // quantity: payment.quantity,
     amount: payment.amount,
-    summary: `${user.name} purchased ${payment.quantity} tickets`,
-  };
-});
-  console.log(recentActivity)  
+    summary: `${buyerName} bought ${payment.quantity} ${payment.quantity === 1 ? "ticket" : "tickets"}`,
+}
+});  
   /* ---------------- FINAL RESPONSE ---------------- */
   return {
     userName: user.name,
@@ -272,6 +272,3 @@ const recentActivity = recentActivityRaw.map(payment => {
     recentActivity,
   };
 };
-
-
-const p = "papi"

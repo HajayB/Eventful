@@ -175,7 +175,7 @@ export const rotateRefreshToken = async (refreshToken: string):Promise<RotateRes
   if (!user) {
     throw new Error("User not found");
   }
-  console.log(user)
+  
 
   const newRefreshToken = signRefreshToken({
     userId: user._id.toString(),
