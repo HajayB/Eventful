@@ -9,7 +9,7 @@ interface SendTicketsEmailInput {
   event: EventDocument;
   tickets: TicketDocument[];
   paymentId?: string;
-  token:string;
+  // token:string;
 }
 interface SendResetEmail{
   to:string,

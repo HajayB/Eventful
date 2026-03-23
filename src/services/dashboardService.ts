@@ -233,20 +233,35 @@ export const getCreatorDashboard = async (creatorId: string) => {
     .slice(0, 3);
 
   /* ---------------- RECENT ACTIVITY ---------------- */
-  const recentActivityRaw = await Ticket.find(
-    { eventId: { $in: eventIds } },
-    { eventId: 1, createdAt: 1 }
-  )
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .populate("eventId", "title")
-    .lean();
+const recentActivityRaw = await Payment.find(
+  {
+    eventId: { $in: eventIds },
+    status: "SUCCESS", 
+  },
+  {
+    eventId: 1,
+    createdAt: 1,
+    quantity: 1,
+    amount: 1,
+  }
+)
+  .sort({ createdAt: -1 })
+  .limit(5)
+  .populate("eventId", "title")
+  .populate("userId", "name email")
+  .lean();
 
-  const recentActivity = recentActivityRaw.map(ticket => ({
-    eventTitle: (ticket.eventId as any)?.title,
-    purchasedAt: ticket.createdAt,
-  }));
-
+const recentActivity = recentActivityRaw.map(payment => {
+  const eventTitle = (payment.eventId as any)?.title;
+  return {
+    eventTitle,
+    purchasedAt: payment.createdAt,
+    quantity: payment.quantity,
+    amount: payment.amount,
+    summary: `${user.name} purchased ${payment.quantity} tickets`,
+  };
+});
+  console.log(recentActivity)  
   /* ---------------- FINAL RESPONSE ---------------- */
   return {
     userName: user.name,
@@ -257,3 +272,6 @@ export const getCreatorDashboard = async (creatorId: string) => {
     recentActivity,
   };
 };
+
+
+const p = "papi"

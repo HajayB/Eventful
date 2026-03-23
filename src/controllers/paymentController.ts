@@ -99,3 +99,4 @@ export const resendTickets = async (req:Request, res:Response) => {
     message: "Tickets resent successfully",
   });
 };
+
