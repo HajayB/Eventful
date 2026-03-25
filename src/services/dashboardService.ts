@@ -185,6 +185,7 @@ export const getCreatorDashboard = async (creatorId: string) => {
     });
 
   /* ---------------- CHECK-IN SUMMARY ---------------- */
+  //This shows the amount of tickets that have been scanned while an event is happening 
   const checkInSummary = events
     .filter(e => {
       const start = new Date(e.startTime);
@@ -226,9 +227,9 @@ export const getCreatorDashboard = async (creatorId: string) => {
     })
     .filter(
       e =>
-        e.daysLeft <= 7 &&
-        e.daysLeft > 0 &&
-        e.capacityPercent < 0.3
+        e.daysLeft <= 60 && //show events that will happen in 20 days or less
+        e.daysLeft > 0 && 
+        e.capacityPercent < 0.3 //and events that have sold less than 30% 
     )
     .slice(0, 3);
 
