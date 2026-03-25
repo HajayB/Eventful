@@ -58,10 +58,11 @@ export const getUserReminders = async (userId: string) => {
 
 //Send email 
 export const processPendingReminders = async () => {
-  const now = new Date();
+  
   console.log("Worker is running...");
 
   while (true) {
+    const now = new Date();
     const reminder = await Notification.findOneAndUpdate(
       {
         remindAt: { $lte: now },
