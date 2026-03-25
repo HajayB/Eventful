@@ -4,6 +4,7 @@ import routes from "./routes";
 import { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser"
+import { startReminderJob } from "./jobs/reminderJob";
 const app = express();
 setupSwagger(app);
 
@@ -31,10 +32,14 @@ app.use("/paystack/callback", (req: Request,res: Response)=>{
   });
   
 })
-
+startReminderJob();
 
 app.use("/", (req: Request,res: Response)=>{
   res.status(200).json({message:"Server is running 🥶"})
 })
+
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 export default app;
