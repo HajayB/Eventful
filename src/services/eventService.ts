@@ -143,43 +143,62 @@ export const getSingleEventService = async (eventId: string) => {
 
 
 export const getCreatorEventsService = async (
-  creatorId: string, page:number =1, limit:number=4
+  creatorId: string, page: number = 1, limit: number = 3, search = ""
 ) => {
-  const skip = (page -1 ) * limit;
+  const skip = (page - 1) * limit;
   const now = new Date();
-  const pastEventsFilter = {creatorId,
-  startTime: { $lt: now },
-  $expr: { $lt: ["$ticketsSold", "$totalTickets"] }
-};
-  const activeEventsFilter = {creatorId, 
-  startTime: { $gt: now },
-  $expr: { $lt: ["$ticketsSold", "$totalTickets"] }
-};
 
-  const activeEvents = await Event.find(activeEventsFilter) 
-  .select("-__v")
-  .sort({startTime:1})
-  .skip(skip)
-  .limit(limit);
+  // Build search filter only when a term is provided
+  const searchFilter = search.trim()
+    ? {
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      }
+    : {};
 
-  const pastEvents = await Event.find(pastEventsFilter) 
-  .select("-__v")
-  .sort({startTime:1})
-  .skip(skip)
-  .limit(limit);
+  const activeEventsFilter = {
+    creatorId,
+    startTime: { $gt: now },
+    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
+    ...searchFilter,
+  };
 
-  
-  const totalEvents = await Event.countDocuments({creatorId});
+  const pastEventsFilter = {
+    creatorId,
+    startTime: { $lt: now },
+    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
+    ...searchFilter,
+  };
+
+  const [activeEvents, pastEvents, totalCurrentEvents, totalOldEvents] =
+    await Promise.all([
+      Event.find(activeEventsFilter).select("-__v").sort({ startTime: 1 }).skip(skip).limit(limit),
+      Event.find(pastEventsFilter).select("-__v").sort({ startTime: 1 }).skip(skip).limit(limit),
+      Event.countDocuments(activeEventsFilter),
+      Event.countDocuments(pastEventsFilter),
+    ]);
 
   return {
-    CurrentEvents: activeEvents, 
-    pagination:{
-      totalEvents:totalEvents, 
-      page, 
-      limit, 
-      totalPages: Math.ceil(totalEvents/limit),
+    CurrentEvents: {
+      activeEvents,
+      pagination: {
+        totalEvents: totalCurrentEvents,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCurrentEvents / limit),
+      },
     },
-    OldEvents:pastEvents,
+    OldEvents: {
+      pastEvents,
+      pagination: {
+        totalEvents: totalOldEvents,
+        page,
+        limit,
+        totalPages: Math.ceil(totalOldEvents / limit),
+      },
+    },
   };
 };
 

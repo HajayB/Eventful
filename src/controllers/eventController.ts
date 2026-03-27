@@ -13,13 +13,15 @@ import {
 import { Event } from "../models/eventModel";
 //INVALIDATE CACHE
 export const invalidateEventsCache = () => {
-  const keys = cache.keys(); // gets ALL keys
+  const keys = cache.keys();
+  const staleKeys = keys.filter(
+    (key) => key.startsWith("events:all:") || key.startsWith("creator:")
+  );
+  staleKeys.forEach((key) => cache.del(key));
+};
 
-  const eventKeys = keys.filter((key) => key.startsWith("events:all:"));
-
-  eventKeys.forEach((key) => {
-    cache.del(key);
-  });
+const invalidateSingleEventCache = (eventId: string) => {
+  cache.del(`events:${eventId}`);
 };
 /**
  * CREATE EVENT (CREATOR)
@@ -100,20 +102,43 @@ export const getSingleEvent = async (req: Request, res: Response) => {
   }
 };
 
+const parseCreatorQuery = (query: any) => ({
+  page: Number(query.page) || 1,
+  limit: Number(query.limit) || 3,
+  search: String(query.search || "").trim(), //trimmed here so search with space share a cache key with search without space
+});
+
+const buildCreatorEventsCacheKey = (creatorId: string, parsed: ReturnType<typeof parseCreatorQuery>) => {
+  const { page, limit, search } = parsed; 
+
+  return `creator:${creatorId}:events:page=${page}:limit=${limit}:search=${search}`;
+  //by adding ^^^^ we scope the cache per creator
+};
+
+
 export const getCreatorEvents = async (req: Request, res: Response) => {
   try {
     const creatorId = req.user!.userId.toString();
+    const parsed = parseCreatorQuery(req.query);
 
-    
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 5;
+    const cacheKey = buildCreatorEventsCacheKey(creatorId,parsed);
 
-    const events = await getCreatorEventsService(creatorId, page, limit);
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
+    const { page, limit, search } = parsed; // ✅ use the already-parsed result
+    const events = await getCreatorEventsService(creatorId, page, limit, search);
+
+    cache.set(cacheKey, events); // ✅ actually store it
     res.status(200).json(events);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
+
+
 /**
  * UPDATE EVENT
  */
@@ -128,9 +153,8 @@ export const updateEvent = async (req: Request, res: Response) => {
       req.body
     );
 
-    // Invalidate caches
-    await invalidateEventsCache()
-    
+    invalidateEventsCache();
+    invalidateSingleEventCache(eventId);
 
     res.status(200).json(updatedEvent);
   } catch (error: any) {
@@ -148,9 +172,8 @@ export const deleteEvent = async (req: Request, res: Response) => {
 
     await deleteEventService(eventId, creatorId);
 
-    // Invalidate caches
-    await invalidateEventsCache();
-    
+    invalidateEventsCache();
+    invalidateSingleEventCache(eventId);
 
     res.status(200).json({message:"Event deleted 🗑"});
   } catch (error: any) {
