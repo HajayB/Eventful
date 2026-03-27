@@ -13,7 +13,7 @@ router.use("/auth", authRoutes);
 router.use("/events", eventRoutes);
 router.use("/tickets", ticketRoutes);
 router.use("/payments", paymentRoutes);
-router.use("/analytics", analyticsRoutes);
+router.use("/stats", analyticsRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/", dashboardRoutes)
 

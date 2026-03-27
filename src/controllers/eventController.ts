@@ -46,11 +46,11 @@ export const createEvent = async (req: Request, res: Response) => {
 };
 const parseQuery = (query: any) => ({
   page: Number(query.page) || 1,
-  limit: Number(query.limit) || 4,
+  limit: Number(query.limit) || 6,
   search: String(query.search || ""),
 });
 const buildEventsCacheKey = (parseQuery:any) => {
-  const { page = 1, limit = 4, search = "" } = parseQuery;
+  const { page = 1, limit = 6, search = "" } = parseQuery;
 
   return `events:all:page=${page}:limit=${limit}:search=${search}`;
 };

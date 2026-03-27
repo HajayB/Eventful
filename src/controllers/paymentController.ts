@@ -4,10 +4,22 @@ import {
   initializePayment,
   handlePaystackWebhook,
 } from "../services/paymentService";
+import { getUserPaymentHistory } from "../services/paymentHistoryService";
 import { Payment } from "../models/paymentModel";
 import { Ticket } from "../models/ticketModel";
 import { Event } from "../models/eventModel";
 import { sendTicketsEmail } from "../services/emailService";
+
+// GET /payments/history
+export const paymentHistoryController = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId.toString();
+    const payments = await getUserPaymentHistory(userId);
+    return res.status(200).json({ payments });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Failed to fetch payment history" });
+  }
+};
 
 //initialize payment
 export const initializePaymentController = async (
