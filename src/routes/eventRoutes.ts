@@ -5,7 +5,9 @@ import {
   getSingleEvent,
   getCreatorEvents,
   updateEvent,
-  deleteEvent, shareEvent
+  deleteEvent,
+  shareEvent,
+  getTodayEvents,
 } from "../controllers/eventController";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCreator } from "../middlewares/requireCreator";
@@ -19,9 +21,9 @@ const router = Router();
 
 // Public
 router.get("/", getAllEvents);
-router.get("/:eventId", getSingleEvent); 
-
+router.get("/today", getTodayEvents);
 router.get("/share/:eventId", shareEvent);
+router.get("/:eventId", getSingleEvent);
 // Creator
 router.post(
   "/",

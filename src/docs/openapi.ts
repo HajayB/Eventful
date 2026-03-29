@@ -23,7 +23,7 @@ const ErrorResponseSchema = registry.register(
   })
 );
 
-//REGISTER 
+// AUTH
 const AuthResponseSchema = registry.register(
   "AuthResponse",
   z.object({
@@ -36,170 +36,110 @@ const AuthResponseSchema = registry.register(
     }),
   })
 );
-//LOGIN
+
 const LoginResponseSchema = registry.register(
-    "LoginResponse",
-    z.object({
-      user: z.object({
-        _id: z.string(),
-        name: z.string(),
-        email: z.string(),
-        role: z.enum(["CREATOR", "EVENTEE"]),
-        createdAt: z.string(),
-      }),
-      token: z.string(),
-    })
-  );
-//GET ALL EVENTS  
-const EventResponseSchema = registry.register(
-    "EventListResponse",
-    z.object({
-        _id: z.string(),
-        creatorId: z.string(),
-        title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    startTime: z.date(),
-    endTime: z.date(),
-    price: z.number(),
-    totalTickets: z.number(),
-    ticketsSold: z.number(),
-    createdAt: z.date(),
-    })
-)
-//GET SINGLE EVENT
-const SingleEventResponseSchema = registry.register(
-    "SingleEventResponse",
-    z.object({
-        _id: z.string(),
-        creatorId: z.string(),
-        title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    startTime: z.date(),
-    endTime: z.date(),
-    price: z.number(),
-    totalTickets: z.number(),
-    ticketsSold: z.number(),
-    createdAt: z.date(),
-    })
-)
-//GET EVENT SHARE LINK
-const shareEventResponseSchema = registry.register(
-    "ShareEventResponse",
-    z.object({
-        id: z.string(),
-        title: z.string(),
-        description: z.string(),
-        startTime: z.date(),
-        location: z.string(),
-        price: z.number(),
-        coverImage: z.string(),
-        shareUrl: z.string(),
-    })
-)
-//(CREATOR) CREATE EVENT
-
-const createEventRequestSchema = registry.register(
-  "CreateEventRequest",
+  "LoginResponse",
   z.object({
-    title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    startTime: z.date(),
-    endTime: z.date(),
-    price: z.number(),
-    totalTickets: z.number(),
-  })
-)
-const createEventResponseSchema = registry.register(
-    "CreateEventResponse",
-    z.object({
-      message:z.string(),
-      id: z.string(),
-      creatorId: z.string(),
-      title: z.string(),
-      description: z.string(),
-      location: z.string(),
-      startTime: z.date(),
-      endTime: z.date(),
-      price: z.number(),
-      totalTickets: z.number(),
-      ticketsSold: z.number(),
+    user: z.object({
+      _id: z.string(),
+      name: z.string(),
+      email: z.string(),
+      role: z.enum(["CREATOR", "EVENTEE"]),
       createdAt: z.string(),
-    })
-)
-//(CREATOR)EDITS EVENT
-const EditEventRequestSchema = registry.register(
-  "CreateEventRequest",
-  z.object({
-    title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    startTime: z.date(),
-    endTime: z.date(),
-    price: z.number(),
-    totalTickets: z.number(),
+    }),
+    token: z.string(),
   })
-)
-const EditEventResponseSchema = registry.register(
-  "CreateEventResponse",
-  z.object({
-    message:z.string(),
-    id: z.string(),
-    creatorId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    startTime: z.string(),
-    endTime: z.string(),
-    price: z.number(),
-    totalTickets: z.number(),
-    ticketsSold: z.number(),
-    createdAt: z.string(),
-  })
-)
-//(CREATOR)DELETE EVENT
-const DeleteEventResponseSchema = registry.register(
-  "CreateEventResponse",
-  z.object({
-    message:z.string(),
-  })
-)  
+);
 
-//(CREATOR)GET ALL CREATED EVENTS
-const CreatedEventsResponseSchema = registry.register(
-  "CreatedEventResponse",
+// EVENTS
+const EventSchema = registry.register(
+  "Event",
   z.object({
     _id: z.string(),
     creatorId: z.string(),
     title: z.string(),
     description: z.string(),
     location: z.string(),
-    startTime: z.string(),
-    endTime: z.string(),
+    startTime: z.string().datetime(),
+    endTime: z.string().datetime(),
     price: z.number(),
     totalTickets: z.number(),
     ticketsSold: z.number(),
-    createdAt: z.string(),
+    coverImage: z.string().optional(),
+    maxTicketsPerPurchase: z.number(),
+    createdAt: z.string().datetime(),
   })
-)
-//EVENTID SCHEMA
+);
+
+const ShareEventResponseSchema = registry.register(
+  "ShareEventResponse",
+  z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    startTime: z.string().datetime(),
+    location: z.string(),
+    price: z.number(),
+    coverImage: z.string(),
+    shareUrl: z.string(),
+  })
+);
+
+const CreateEventRequestSchema = registry.register(
+  "CreateEventRequest",
+  z.object({
+    title: z.string(),
+    description: z.string(),
+    location: z.string(),
+    startTime: z.string().datetime(),
+    endTime: z.string().datetime(),
+    price: z.number(),
+    totalTickets: z.number(),
+    coverImage: z.string().optional(),
+    maxTicketsPerPurchase: z.number().optional(),
+  })
+);
+
+const UpdateEventRequestSchema = registry.register(
+  "UpdateEventRequest",
+  z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    location: z.string().optional(),
+    startTime: z.string().datetime().optional(),
+    endTime: z.string().datetime().optional(),
+    price: z.number().optional(),
+    totalTickets: z.number().optional(),
+    coverImage: z.string().optional(),
+    maxTicketsPerPurchase: z.number().optional(),
+  })
+);
+
+const CreatorEventsResponseSchema = registry.register(
+  "CreatorEventsResponse",
+  z.object({
+    CurrentEvents: z.object({
+      activeEvents: z.array(EventSchema),
+      pastEvents: z.array(EventSchema),
+    }),
+  })
+);
+
+// TICKETS
 const TicketEventSchema = registry.register(
   "TicketEvent",
   z.object({
     _id: z.string(),
     title: z.string(),
     location: z.string(),
-    startTime: z.date(),
-    endTime: z.date(),
+    startTime: z.string().datetime(),
+    endTime: z.string().datetime(),
     price: z.number(),
   })
 );
 
-//(EVENTEE)GET ALL PURCHASED TICKETS
-const PurchasedTicketsResponseSchema = registry.register(
-  "PurchasedTicketsResponse",
+const PurchasedTicketSchema = registry.register(
+  "PurchasedTicket",
   z.object({
     _id: z.string(),
     eventId: TicketEventSchema,
@@ -209,8 +149,16 @@ const PurchasedTicketsResponseSchema = registry.register(
     status: z.enum(["UNUSED", "USED"]),
     hasQr: z.boolean(),
   })
-)
-//(CREATOR)SCAN PURCHASED TICKETS
+);
+
+const ScanTicketRequestSchema = registry.register(
+  "ScanTicketRequest",
+  z.object({
+    qrPayload: z.string(),
+    eventId: z.string(),
+  })
+);
+
 const ScanTicketResponseSchema = registry.register(
   "ScanTicketResponse",
   z.object({
@@ -221,15 +169,8 @@ const ScanTicketResponseSchema = registry.register(
     scannedAt: z.string().datetime(),
   })
 );
-const ScanTicketRequestSchema = registry.register(
-  "ScanTicketRequest",
-  z.object({
-    qrPayload: z.string(),
-    eventId:z.string()
-  })
-);
 
-//(EVENTEE)PAYMENT
+// PAYMENTS
 const InitializePaymentRequestSchema = registry.register(
   "InitializePaymentRequest",
   z.object({
@@ -246,14 +187,48 @@ const InitializePaymentResponseSchema = registry.register(
     paymentRef: z.string(),
   })
 );
-//(EVENTEE) RESEND TICKET TO EMAIL
-const ResendTicketResponseSchema = registry.register(
-  "ResendTicketResponse",
+
+const GuestInitializePaymentRequestSchema = registry.register(
+  "GuestInitializePaymentRequest",
   z.object({
-    message: z.string(),
+    eventId: z.string().length(24),
+    quantity: z.number().min(1),
+    email: z.string().email(),
   })
 );
-//(CREATOR) ANALYTICS ALL TIME 
+
+const GuestResendRequestSchema = registry.register(
+  "GuestResendRequest",
+  z.object({
+    email: z.string().email(),
+    reference: z.string(),
+  })
+);
+
+const PaymentHistoryItemSchema = registry.register(
+  "PaymentHistoryItem",
+  z.object({
+    _id: z.string(),
+    reference: z.string(),
+    amount: z.number(),
+    quantity: z.number(),
+    status: z.enum(["SUCCESS", "PENDING", "FAILED"]),
+    paidAt: z.string().datetime(),
+    event: z.object({
+      _id: z.string(),
+      title: z.string(),
+      location: z.string(),
+      startTime: z.string().datetime(),
+    }),
+  })
+);
+
+const MessageResponseSchema = registry.register(
+  "MessageResponse",
+  z.object({ message: z.string() })
+);
+
+// ANALYTICS
 const CreatorAllTimeAnalyticsSchema = registry.register(
   "CreatorAllTimeAnalytics",
   z.object({
@@ -264,7 +239,6 @@ const CreatorAllTimeAnalyticsSchema = registry.register(
   })
 );
 
-//(CREATOR) PAYMENT ANALYTICS ALL TIME 
 const CreatorPaymentAnalyticsSchema = registry.register(
   "CreatorPaymentAnalytics",
   z.object({
@@ -275,7 +249,6 @@ const CreatorPaymentAnalyticsSchema = registry.register(
   })
 );
 
-//(CREATOR) SINGLE EVENT ANALYTICS
 const CreatorEventAnalyticsSchema = registry.register(
   "CreatorEventAnalytics",
   z.object({
@@ -287,319 +260,380 @@ const CreatorEventAnalyticsSchema = registry.register(
   })
 );
 
-//NOTIFICATIONS SCHEMA 
-
-const createReminderSchema = registry.register(
-  "ReminderRequest",
+// DASHBOARD
+const CreatorDashboardResponseSchema = registry.register(
+  "CreatorDashboardResponse",
   z.object({
-    eventId:z.string(),
-    remindAt:z.date()
+    totalRevenue: z.number(),
+    totalTicketsSold: z.number(),
+    totalEvents: z.number(),
+    recentActivity: z.array(
+      z.object({
+        title: z.string(),
+        amount: z.number(),
+        quantity: z.number(),
+        summary: z.string(),
+        date: z.string(),
+      })
+    ),
   })
-)
+);
+
+const EventeeDashboardResponseSchema = registry.register(
+  "EventeeDashboardResponse",
+  z.object({
+    upcomingEvents: z.array(EventSchema),
+    recentActivity: z.array(
+      z.object({
+        title: z.string(),
+        amount: z.number(),
+        quantity: z.number(),
+        summary: z.string(),
+        date: z.string(),
+      })
+    ),
+  })
+);
+
+// NOTIFICATIONS
+const CreateReminderRequestSchema = registry.register(
+  "CreateReminderRequest",
+  z.object({
+    eventId: z.string(),
+    remindAt: z.string().datetime(),
+  })
+);
+
 const ReminderResponseSchema = registry.register(
   "ReminderResponse",
   z.object({
     id: z.string(),
     eventId: z.string(),
-    remindAt: z.date(),
-    createdAt: z.date(),
+    remindAt: z.string().datetime(),
+    createdAt: z.string().datetime(),
   })
 );
 
-const cronResponseSchema = registry.register(
-  "cronResponse",
-  z.object({
-    message:z.string(),
-  })
+const CronResponseSchema = registry.register(
+  "CronResponse",
+  z.object({ message: z.string() })
 );
+
 
 /**
  * STEP 2 — Register Routes
  */
-//AUTH
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+
 registry.registerPath({
   method: "post",
   path: "/auth/register",
   tags: ["Auth"],
   request: {
     body: {
-      content: {
-        "application/json": {
-          schema: registerSchema,
-        },
-      },
+      content: { "application/json": { schema: registerSchema } },
     },
   },
   responses: {
     201: {
       description: "User registered successfully",
-      content: {
-        "application/json": {
-          schema: AuthResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: AuthResponseSchema } },
     },
+    400: { description: "Validation error" },
+    429: { description: "Too many registration attempts" },
   },
 });
+
 registry.registerPath({
-    method: "post",
-    path: "/auth/login",
-    tags: ["Auth"],
-    request: {
-      body: {
-        content: {
-          "application/json": {
-            schema: z.object({
-              email: z.string().email(),
-              password: z.string().min(6),
-            }),
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: "Login successful",
-        content: {
-          "application/json": {
-            schema: LoginResponseSchema,
-          },
-        },
-      },
-      401: {
-        description: "Invalid credentials",
-      },
-      429: {
-        description: "Too many login attempts",
-      },
-    },
-  });
-//EVENTS
-  registry.registerPath({
-    method: "get",
-    path: "/events",
-    tags: ["Events"],
-    responses: {
-      200: {
-        description: "List of events",
-        content: {
-          "application/json": {
-            schema: z.array(EventResponseSchema),
-          },
-        },
-      },
-    },
-  });
-  registry.registerPath({
-    method: "get",
-    path: "/events/{eventId}",
-    tags: ["Events"],
-    responses: {
-      200: {
-        description: "Return single event",
-        content: {
-          "application/json": {
-            schema: SingleEventResponseSchema,
-          },
-        },
-      },
-      404: {
-        description: "Event not found",
-      },
-    },
-  });
-
-  registry.registerPath({
-    method: "get",
-    path: "/events/share/{eventId}",
-    tags: ["Events"],
-    responses: {
-      200: {
-        description: "Return event details with cover image and shareUrl",
-        content: {
-          "application/json": {
-            schema: shareEventResponseSchema,
-          },
-        },
-      },
-      404: {
-        description: "Event not found",
-      },
-    },
-  });
-
-
-  registry.registerPath({
-    method: "post",
-    path: "/events",
-    tags: ["Events"],
-    security: [{ bearerAuth: [] }],  // 🔐 requires login
-    description: "Create a new event (Creator role required)",
-    request: {
-      body: {
-        content: {
-          "application/json": {
-            schema: createEventRequestSchema,
-          },
-        },
-      },
-    },
-    responses: {
-      201: {
-        description: "Event created successfully",
-        content: {
-          "application/json": {
-            schema: createEventResponseSchema,
-          },
-        },
-      },
-      400: {
-        description: "Validation error",
-      },
-      401: {
-        description: "Unauthorized",
-      },
-      403: {
-        description: "Creator access required",
-      },
-    },
-  });
-  
-  registry.registerPath({
-    method: "put",
-    path: "/events/{eventId}",
-    tags: ["Events"],
-    security: [{ bearerAuth: [] }],  // 🔐 requires login
-    description: "Edit an event (Creator role required)",
-    request: {
-      body: {
-        content: {
-          "application/json": {
-            schema: EditEventRequestSchema,
-          },
-        },
-      },
-    },
-    responses: {
-      201: {
-        description: "Event edited successfully",
-        content: {
-          "application/json": {
-            schema: EditEventResponseSchema,
-          },
-        },
-      },
-      400: {
-        description: "Validation error",
-      },
-      401: {
-        description: "Unauthorized",
-      },
-      403: {
-        description: "Creator access required",
-      },
-    },
-  });
-  registry.registerPath({
-    method: "delete",
-    path: "/events/{eventId}",
-    tags: ["Events"],
-    security: [{ bearerAuth: [] }],  // 🔐 requires login
-    description: "Delete an event (Creator role required)",
-    request: {
-      body: {
-        content: {
-          "application/json": {
-            schema: DeleteEventResponseSchema,
-          },
-        },
-      },
-    },
-    responses: {
-      201: {
-        description: "Event deleted",
-        content: {
-          "application/json": {
-            schema: DeleteEventResponseSchema,
-          },
-        },
-      },
-      400: {
-        description: "Validation error",
-      },
-      401: {
-        description: "Unauthorized",
-      },
-      403: {
-        description: "Creator access required",
-      },
-    },
-  });
-  registry.registerPath({
-    method: "get",
-    path: "/events/creator/me",
-    tags: ["Events"],
-    security: [{ bearerAuth: [] }],  // 🔐 requires login
-    description: "View created events (Creator role required)",
-    request: {
-      body: {
-        content: {
-          "application/json": {
-            schema: CreatedEventsResponseSchema,
-          },
-        },
-      },
-    },
-    responses: {
-      201: {
-        description: "Created events",
-        content: {
-          "application/json": {
-            schema: CreatedEventsResponseSchema,
-          },
-        },
-      },
-      400: {
-        description: "Validation error",
-      },
-      401: {
-        description: "Unauthorized",
-      },
-      403: {
-        description: "Creator access required",
-      },
-    },
-  });
-
-  
-//TICKETS
-registry.registerPath({
-  method: "get",
-  path: "/tickets/me",
-  tags: ["Tickets"],
-  security: [{ bearerAuth: [] }],  // 🔐 requires login
-  description: "View purchased events",
+  method: "post",
+  path: "/auth/login",
+  tags: ["Auth"],
   request: {
     body: {
       content: {
         "application/json": {
-          schema: PurchasedTicketsResponseSchema,
+          schema: z.object({
+            email: z.string().email(),
+            password: z.string().min(6),
+          }),
         },
       },
     },
   },
   responses: {
-    201: {
-      description: "Purchased events",
+    200: {
+      description: "Login successful",
+      content: { "application/json": { schema: LoginResponseSchema } },
+    },
+    401: { description: "Invalid credentials" },
+    429: { description: "Too many login attempts" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/refresh",
+  tags: ["Auth"],
+  description: "Refresh access token using httpOnly refresh cookie",
+  responses: {
+    200: {
+      description: "New access token returned",
+      content: { "application/json": { schema: z.object({ token: z.string() }) } },
+    },
+    401: { description: "No refresh token or token expired" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/logout",
+  tags: ["Auth"],
+  description: "Clear refresh token cookie",
+  responses: {
+    200: {
+      description: "Logged out successfully",
+      content: { "application/json": { schema: MessageResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/change-password",
+  tags: ["Auth"],
+  description: "Change password for the logged-in user",
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
       content: {
         "application/json": {
-          schema: PurchasedTicketsResponseSchema,
+          schema: z.object({
+            currentPassword: z.string(),
+            newPassword: z.string().min(6),
+          }),
         },
       },
     },
-    401: {
-      description: "Unauthorized",
+  },
+  responses: {
+    200: {
+      description: "Password changed successfully",
+      content: { "application/json": { schema: MessageResponseSchema } },
     },
+    400: { description: "Current password incorrect or validation error" },
+    401: { description: "Unauthorized" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/reset-password-link",
+  tags: ["Auth"],
+  description: "Send a password reset link to the user's email",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({ email: z.string().email() }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Reset link sent if account exists",
+      content: { "application/json": { schema: MessageResponseSchema } },
+    },
+    429: { description: "Too many requests" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/reset-password",
+  tags: ["Auth"],
+  description: "Reset password using the token from the reset link",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            token: z.string(),
+            newPassword: z.string().min(6),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Password reset successfully",
+      content: { "application/json": { schema: MessageResponseSchema } },
+    },
+    400: { description: "Invalid or expired token" },
+    429: { description: "Too many requests" },
+  },
+});
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/events",
+  tags: ["Events"],
+  description: "Get all events (public)",
+  responses: {
+    200: {
+      description: "List of events",
+      content: { "application/json": { schema: z.array(EventSchema) } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/events/today",
+  tags: ["Events"],
+  description: "Get events happening today — used for guest (walk-in) purchases (public)",
+  responses: {
+    200: {
+      description: "List of today's active events",
+      content: { "application/json": { schema: z.array(EventSchema) } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/events/share/{eventId}",
+  tags: ["Events"],
+  description: "Get shareable event details with cover image and share URL (public)",
+  request: {
+    params: z.object({ eventId: z.string().length(24) }),
+  },
+  responses: {
+    200: {
+      description: "Event share details",
+      content: { "application/json": { schema: ShareEventResponseSchema } },
+    },
+    404: { description: "Event not found" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/events/{eventId}",
+  tags: ["Events"],
+  description: "Get a single event by ID (public)",
+  request: {
+    params: z.object({ eventId: z.string().length(24) }),
+  },
+  responses: {
+    200: {
+      description: "Event details",
+      content: { "application/json": { schema: EventSchema } },
+    },
+    404: { description: "Event not found" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/events",
+  tags: ["Events"],
+  security: [{ bearerAuth: [] }],
+  description: "Create a new event (Creator only)",
+  request: {
+    body: {
+      content: { "application/json": { schema: CreateEventRequestSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: "Event created successfully",
+      content: { "application/json": { schema: EventSchema } },
+    },
+    400: { description: "Validation error" },
+    401: { description: "Unauthorized" },
+    403: { description: "Creator access required" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/events/creator/me",
+  tags: ["Events"],
+  security: [{ bearerAuth: [] }],
+  description: "Get all events created by the logged-in creator",
+  responses: {
+    200: {
+      description: "Creator's events split into active and past",
+      content: { "application/json": { schema: CreatorEventsResponseSchema } },
+    },
+    401: { description: "Unauthorized" },
+    403: { description: "Creator access required" },
+  },
+});
+
+registry.registerPath({
+  method: "put",
+  path: "/events/{eventId}",
+  tags: ["Events"],
+  security: [{ bearerAuth: [] }],
+  description: "Update an event (Creator only, must own the event)",
+  request: {
+    params: z.object({ eventId: z.string().length(24) }),
+    body: {
+      content: { "application/json": { schema: UpdateEventRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Event updated successfully",
+      content: { "application/json": { schema: EventSchema } },
+    },
+    400: { description: "Validation error" },
+    401: { description: "Unauthorized" },
+    403: { description: "Creator access required" },
+    404: { description: "Event not found" },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/events/{eventId}",
+  tags: ["Events"],
+  security: [{ bearerAuth: [] }],
+  description: "Delete an event (Creator only, must own the event)",
+  request: {
+    params: z.object({ eventId: z.string().length(24) }),
+  },
+  responses: {
+    200: {
+      description: "Event deleted successfully",
+      content: { "application/json": { schema: MessageResponseSchema } },
+    },
+    401: { description: "Unauthorized" },
+    403: { description: "Creator access required" },
+    404: { description: "Event not found" },
+  },
+});
+
+// ─── TICKETS ─────────────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/tickets/me",
+  tags: ["Tickets"],
+  security: [{ bearerAuth: [] }],
+  description: "Get all purchased tickets for the logged-in eventee",
+  responses: {
+    200: {
+      description: "Purchased tickets",
+      content: { "application/json": { schema: z.array(PurchasedTicketSchema) } },
+    },
+    401: { description: "Unauthorized" },
   },
 });
 
@@ -607,38 +641,22 @@ registry.registerPath({
   method: "post",
   path: "/tickets/scan",
   tags: ["Tickets"],
-  description: "Scan a ticket (Creator only)",
   security: [{ bearerAuth: [] }],
+  description: "Scan a ticket QR code (Creator only)",
   request: {
     body: {
-      content: {
-        "application/json": {
-          schema: ScanTicketRequestSchema,
-        },
-      },
+      content: { "application/json": { schema: ScanTicketRequestSchema } },
     },
   },
   responses: {
     200: {
       description: "Ticket scanned successfully",
-      content: {
-        "application/json": {
-          schema: ScanTicketResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: ScanTicketResponseSchema } },
     },
-    400: {
-      description: "Invalid or already used ticket",
-    },
-    401: {
-      description: "Unauthorized",
-    },
-    403: {
-      description: "Only creators can scan tickets",
-    },
-    429: {
-      description: "Too many scan attempts",
-    },
+    400: { description: "Invalid or already used ticket" },
+    401: { description: "Unauthorized" },
+    403: { description: "Only creators can scan tickets" },
+    429: { description: "Too many scan attempts" },
   },
 });
 
@@ -646,78 +664,49 @@ registry.registerPath({
   method: "get",
   path: "/tickets/{ticketId}/qr",
   tags: ["Tickets"],
-  description: "Retrieve QR payload for a specific ticket",
   security: [{ bearerAuth: [] }],
+  description: "Retrieve QR payload for a specific ticket (ticket owner only)",
   request: {
-    params: z.object({
-      ticketId: z.string().length(24),
-    }),
+    params: z.object({ ticketId: z.string().length(24) }),
   },
   responses: {
     200: {
       description: "QR payload retrieved successfully",
       content: {
-        "application/json": {
-          schema: z.object({
-            qrPayload: z.string(),
-          }),
-        },
+        "application/json": { schema: z.object({ qrPayload: z.string() }) },
       },
     },
-    401: {
-      description: "Unauthorized",
-    },
-    404: {
-      description: "Ticket not found",
-    },
-    409: {
-      description: "Ticket already used",
-    },
-    429: {
-      description: "Too many requests",
-    },
+    401: { description: "Unauthorized" },
+    404: { description: "Ticket not found" },
+    409: { description: "Ticket already used" },
+    429: { description: "Too many requests" },
   },
 });
-//PAYMENTS 
+
+// ─── PAYMENTS ────────────────────────────────────────────────────────────────
 
 registry.registerPath({
   method: "post",
   path: "/payments/initialize",
   tags: ["Payments"],
-  description: "Initialize payment for event tickets",
   security: [{ bearerAuth: [] }],
+  description: "Initialize a Paystack payment for event tickets (authenticated eventee)",
   request: {
     body: {
-      content: {
-        "application/json": {
-          schema: InitializePaymentRequestSchema,
-        },
-      },
+      content: { "application/json": { schema: InitializePaymentRequestSchema } },
     },
   },
   responses: {
     200: {
-      description: "Payment initialized successfully",
-      content: {
-        "application/json": {
-          schema: InitializePaymentResponseSchema,
-        },
-      },
+      description: "Payment initialized — redirect user to authorizationUrl",
+      content: { "application/json": { schema: InitializePaymentResponseSchema } },
     },
     400: {
-      description: "Invalid request",
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-        },
-      },
+      description: "Invalid request (e.g. exceeds maxTicketsPerPurchase, sold out)",
+      content: { "application/json": { schema: ErrorResponseSchema } },
     },
-    401: {
-      description: "Unauthorized",
-    },
-    429: {
-      description: "Too many requests",
-    },
+    401: { description: "Unauthorized" },
+    429: { description: "Too many requests" },
   },
 });
 
@@ -725,175 +714,203 @@ registry.registerPath({
   method: "post",
   path: "/payments/webhook",
   tags: ["Payments"],
-  description: "Paystack webhook endpoint",
+  description: "Paystack webhook — verifies signature and issues tickets on successful payment",
   request: {
-    headers: z.object({
-      "x-paystack-signature": z.string(),
-    }),
+    headers: z.object({ "x-paystack-signature": z.string() }),
   },
   responses: {
-    200: {
-      description: "Webhook processed successfully",
-    },
+    200: { description: "Webhook processed successfully" },
     400: {
-      description: "Invalid webhook payload or signature",
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-        },
-      },
+      description: "Invalid signature or payload",
+      content: { "application/json": { schema: ErrorResponseSchema } },
     },
   },
 });
-
 
 registry.registerPath({
   method: "post",
   path: "/payments/resend-ticket/{paymentRef}",
   tags: ["Payments"],
-  description: "Resend ticket email using payment reference",
   security: [{ bearerAuth: [] }],
+  description: "Resend ticket emails for a completed payment (authenticated, must own the payment)",
   request: {
-    params: z.object({
-      paymentRef: z.string(),
-    }),
+    params: z.object({ paymentRef: z.string() }),
   },
   responses: {
     200: {
       description: "Tickets resent successfully",
-      content: {
-        "application/json": {
-          schema: ResendTicketResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: MessageResponseSchema } },
     },
-    401: {
-      description: "Unauthorized",
-    },
+    401: { description: "Unauthorized" },
     404: {
       description: "Payment not found",
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: ErrorResponseSchema } },
     },
-    429: {
-      description: "Too many requests",
-    },
+    429: { description: "Too many requests" },
   },
 });
 
-
-//ANALYTICS 
 registry.registerPath({
   method: "get",
-  path: "/analytics/creator",
-  tags: ["Analytics"],
-  description: "Get creator all-time analytics",
+  path: "/payments/history",
+  tags: ["Payments"],
   security: [{ bearerAuth: [] }],
+  description: "Get payment history for the logged-in eventee",
   responses: {
     200: {
-      description: "Creator analytics retrieved successfully",
-      content: {
-        "application/json": {
-          schema: CreatorAllTimeAnalyticsSchema,
-        },
-      },
+      description: "Payment history",
+      content: { "application/json": { schema: z.array(PaymentHistoryItemSchema) } },
     },
     401: { description: "Unauthorized" },
-    403: { description: "Only creators allowed" },
   },
 });
 
 registry.registerPath({
-  method: "get",
-  path: "/analytics/creator/payments",
-  tags: ["Analytics"],
-  description: "Get creator payment analytics",
-  security: [{ bearerAuth: [] }],
-  responses: {
-    200: {
-      description: "Payment analytics retrieved successfully",
-      content: {
-        "application/json": {
-          schema: CreatorPaymentAnalyticsSchema,
-        },
-      },
-    },
-    401: { description: "Unauthorized" },
-    403: { description: "Only creators allowed" },
-  },
-});
-
-registry.registerPath({
-  method: "get",
-  path: "/analytics/creator/{eventId}",
-  tags: ["Analytics"],
-  description: "Get analytics for a specific event",
-  security: [{ bearerAuth: [] }],
+  method: "post",
+  path: "/payments/guest/initialize",
+  tags: ["Payments (Guest)"],
+  description: "Initialize a payment for unauthenticated (walk-in) attendees. Tickets are emailed after Paystack webhook confirms payment. Rate limited.",
   request: {
-    params: z.object({
-      eventId: z.string().length(24),
-    }),
+    body: {
+      content: { "application/json": { schema: GuestInitializePaymentRequestSchema } },
+    },
   },
   responses: {
     200: {
-      description: "Event analytics retrieved successfully",
-      content: {
-        "application/json": {
-          schema: CreatorEventAnalyticsSchema,
-        },
-      },
+      description: "Payment initialized — redirect user to authorizationUrl",
+      content: { "application/json": { schema: InitializePaymentResponseSchema } },
+    },
+    400: {
+      description: "Invalid request (e.g. sold out, exceeds limit)",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    429: { description: "Too many requests" },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/payments/guest/resend",
+  tags: ["Payments (Guest)"],
+  description: "Resend tickets to a guest using their email + payment reference. Both must match. Rate limited.",
+  request: {
+    body: {
+      content: { "application/json": { schema: GuestResendRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Tickets resent to the provided email",
+      content: { "application/json": { schema: MessageResponseSchema } },
+    },
+    400: {
+      description: "Email/reference mismatch or payment not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    429: { description: "Too many requests" },
+  },
+});
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/creator/dashboard",
+  tags: ["Dashboard"],
+  security: [{ bearerAuth: [] }],
+  description: "Get creator dashboard stats and recent activity (Creator only)",
+  responses: {
+    200: {
+      description: "Creator dashboard data",
+      content: { "application/json": { schema: CreatorDashboardResponseSchema } },
+    },
+    401: { description: "Unauthorized" },
+    403: { description: "Creator access required" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/dashboard",
+  tags: ["Dashboard"],
+  security: [{ bearerAuth: [] }],
+  description: "Get eventee dashboard with upcoming events and recent purchases",
+  responses: {
+    200: {
+      description: "Eventee dashboard data",
+      content: { "application/json": { schema: EventeeDashboardResponseSchema } },
+    },
+    401: { description: "Unauthorized" },
+  },
+});
+
+// ─── ANALYTICS ───────────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/stats/creator",
+  tags: ["Analytics"],
+  security: [{ bearerAuth: [] }],
+  description: "Get all-time aggregate analytics for the logged-in creator",
+  responses: {
+    200: {
+      description: "Creator analytics",
+      content: { "application/json": { schema: CreatorAllTimeAnalyticsSchema } },
+    },
+    401: { description: "Unauthorized" },
+    403: { description: "Only creators allowed" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/stats/creator/payments",
+  tags: ["Analytics"],
+  security: [{ bearerAuth: [] }],
+  description: "Get payment analytics for the logged-in creator",
+  responses: {
+    200: {
+      description: "Creator payment analytics",
+      content: { "application/json": { schema: CreatorPaymentAnalyticsSchema } },
+    },
+    401: { description: "Unauthorized" },
+    403: { description: "Only creators allowed" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/stats/creator/{eventId}",
+  tags: ["Analytics"],
+  security: [{ bearerAuth: [] }],
+  description: "Get analytics for a specific event (Creator only)",
+  request: {
+    params: z.object({ eventId: z.string().length(24) }),
+  },
+  responses: {
+    200: {
+      description: "Event analytics",
+      content: { "application/json": { schema: CreatorEventAnalyticsSchema } },
     },
     401: { description: "Unauthorized" },
     403: { description: "Only creators allowed" },
     404: {
       description: "Event not found",
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: ErrorResponseSchema } },
     },
   },
 });
 
-//EVENTEE ANALYTICS 
 registry.registerPath({
   method: "get",
-  path: "/analytics/eventee/paid",
+  path: "/stats/eventee/paid",
   tags: ["Analytics"],
-  description: "Get paid events for eventee",
   security: [{ bearerAuth: [] }],
+  description: "Get events the eventee has paid for",
   responses: {
     200: {
-      description: "Paid events retrieved successfully",
-      content: {
-        "application/json": {
-          schema: z.array(SingleEventResponseSchema),
-        },
-      },
-    },
-    401: { description: "Unauthorized" },
-  },
-});
-
-
-registry.registerPath({
-  method: "get",
-  path: "/analytics/eventee/attended",
-  tags: ["Analytics"],
-  description: "Get attended events for eventee",
-  security: [{ bearerAuth: [] }],
-  responses: {
-    200: {
-      description: "Attended events retrieved successfully",
-      content: {
-        "application/json": {
-          schema: z.array(SingleEventResponseSchema),
-        },
-      },
+      description: "Paid events",
+      content: { "application/json": { schema: z.array(EventSchema) } },
     },
     401: { description: "Unauthorized" },
   },
@@ -901,60 +918,57 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/analytics/eventee/unattended",
+  path: "/stats/eventee/attended",
   tags: ["Analytics"],
-  description: "Get unattended events for eventee",
   security: [{ bearerAuth: [] }],
+  description: "Get events the eventee has physically attended (ticket scanned)",
   responses: {
     200: {
-      description: "Unattended events retrieved successfully",
-      content: {
-        "application/json": {
-          schema: z.array(SingleEventResponseSchema),
-        },
-      },
+      description: "Attended events",
+      content: { "application/json": { schema: z.array(EventSchema) } },
     },
     401: { description: "Unauthorized" },
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/stats/eventee/unattended",
+  tags: ["Analytics"],
+  security: [{ bearerAuth: [] }],
+  description: "Get paid events the eventee did not attend (ticket unused)",
+  responses: {
+    200: {
+      description: "Unattended events",
+      content: { "application/json": { schema: z.array(EventSchema) } },
+    },
+    401: { description: "Unauthorized" },
+  },
+});
 
-//NOTIFICATIONS 
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
 registry.registerPath({
   method: "post",
   path: "/notifications/reminder",
   tags: ["Notifications"],
-  description: "Create a reminder for an event",
   security: [{ bearerAuth: [] }],
+  description: "Create a reminder for an event",
   request: {
     body: {
-      content: {
-        "application/json": {
-          schema: createReminderSchema,
-        },
-      },
+      content: { "application/json": { schema: CreateReminderRequestSchema } },
     },
   },
   responses: {
     201: {
       description: "Reminder created successfully",
-      content: {
-        "application/json": {
-          schema: ReminderResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: ReminderResponseSchema } },
     },
     400: {
       description: "Invalid request",
-      content: {
-        "application/json": {
-          schema: ErrorResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: ErrorResponseSchema } },
     },
-    401: {
-      description: "Unauthorized",
-    },
+    401: { description: "Unauthorized" },
   },
 });
 
@@ -962,20 +976,14 @@ registry.registerPath({
   method: "get",
   path: "/notifications/reminder/me",
   tags: ["Notifications"],
-  description: "Get all reminders for logged-in user",
   security: [{ bearerAuth: [] }],
+  description: "Get all reminders for the logged-in user",
   responses: {
     200: {
-      description: "User reminders retrieved successfully",
-      content: {
-        "application/json": {
-          schema: z.array(ReminderResponseSchema),
-        },
-      },
+      description: "User reminders",
+      content: { "application/json": { schema: z.array(ReminderResponseSchema) } },
     },
-    401: {
-      description: "Unauthorized",
-    },
+    401: { description: "Unauthorized" },
   },
 });
 
@@ -983,20 +991,14 @@ registry.registerPath({
   method: "post",
   path: "/notifications/internal/run-reminders",
   tags: ["Notifications"],
-  description: "Run worker for reminders",
-  security: [{ bearerAuth: [] }, {xCronSecret:[]}],
+  description: "Internal cron endpoint — processes and sends due reminders",
+  security: [{ bearerAuth: [] }],
   responses: {
     200: {
       description: "Reminders processed",
-      content: {
-        "application/json": {
-          schema: z.array(cronResponseSchema),
-        },
-      },
+      content: { "application/json": { schema: CronResponseSchema } },
     },
-    401: {
-      description: "Unauthorized",
-    },
+    401: { description: "Unauthorized" },
   },
 });
 
@@ -1010,7 +1012,7 @@ export const generateOpenAPIDocument = () => {
   return generator.generateDocument({
     openapi: "3.0.0",
     info: {
-      title: "Eventful API",
+      title: "Eventify API",
       version: "1.0.0",
     },
     servers: [
@@ -1018,6 +1020,5 @@ export const generateOpenAPIDocument = () => {
         url: "http://localhost:4000",
       },
     ],
-
   });
 };

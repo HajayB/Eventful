@@ -7,7 +7,7 @@ import crypto from "crypto";
 
 interface IssueTicketsInput {
   eventId: string;
-  eventeeId: string;
+  eventeeId: string | null;
   quantity: number;
   paymentRef: string;
 }
@@ -41,7 +41,7 @@ export const issueTicketsAfterPayment = async ({
       // CREATE TICKETS 
       const ticketsPayload = Array.from({ length: quantity }).map(() => ({
         eventId: new Types.ObjectId(eventId),
-        eventeeId: new Types.ObjectId(eventeeId),
+        eventeeId: eventeeId ? new Types.ObjectId(eventeeId) : null,
         paymentRef,
         qrPayload: generateQrPayload(),
         isScanned: false,

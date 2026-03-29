@@ -9,6 +9,7 @@ import {
   getCreatorEventsService,
   updateEventService,
   deleteEventService,
+  getTodayEventsService,
 } from "../services/eventService";
 import { Event } from "../models/eventModel";
 //INVALIDATE CACHE
@@ -46,11 +47,11 @@ export const createEvent = async (req: Request, res: Response) => {
 };
 const parseQuery = (query: any) => ({
   page: Number(query.page) || 1,
-  limit: Number(query.limit) || 6,
+  limit: Number(query.limit) || 8,
   search: String(query.search || ""),
 });
 const buildEventsCacheKey = (parseQuery:any) => {
-  const { page = 1, limit = 6, search = "" } = parseQuery;
+  const { page = 1, limit = 8, search = "" } = parseQuery;
 
   return `events:all:page=${page}:limit=${limit}:search=${search}`;
 };
@@ -72,7 +73,6 @@ export const getAllEvents = async (req: Request, res: Response) => {
     const events = await getAllEventsService(page, limit, search);
 
     cache.set(cacheKey, events, 60); // TTL = 60 seconds
-    await invalidateEventsCache();
     return res.status(200).json(events);
   } catch (error: any) {
     return res.status(400).json({ message: error.message });
@@ -104,7 +104,7 @@ export const getSingleEvent = async (req: Request, res: Response) => {
 
 const parseCreatorQuery = (query: any) => ({
   page: Number(query.page) || 1,
-  limit: Number(query.limit) || 3,
+  limit: Number(query.limit) ||4,
   search: String(query.search || "").trim(), //trimmed here so search with space share a cache key with search without space
 });
 
@@ -184,36 +184,49 @@ export const deleteEvent = async (req: Request, res: Response) => {
 //share event via link 
 
 const DEFAULT_EVENT_IMAGE =
-  "https://placehold.co/600x400?text=EventFul+CoverImage";
+  "https://placehold.co/600x400?text=Eventify+CoverImage";
+
+// GET /events/today — public, for guest purchase page
+export const getTodayEvents = async (req: Request, res: Response) => {
+  try {
+    const events = await getTodayEventsService();
+    return res.json({ events });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Failed to fetch today's events" });
+  }
+};
 
 export const shareEvent = async (req:Request, res:Response) => {
-  const eventId = req.params.eventId as string;
-  if (!mongoose.Types.ObjectId.isValid(eventId)) {
-    return res.status(404).json({
-      message: "Event not found",
-    });
-  } 
-  const event = await Event.findById(eventId).select(
-    "title description startTime location coverImage price"
-  );
+  try {
+    const eventId = req.params.eventId as string;
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(404).json({
+        message: "Event not found",
+      });
+    }
+    const event = await Event.findById(eventId).select(
+      "title description startTime location coverImage price"
+    );
 
-  if (!event) {
-    return res.status(404).json({
-      message: "Event not found",
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found",
+      });
+    }
+
+    const finalCoverImage = event.coverImage || DEFAULT_EVENT_IMAGE;
+
+    return res.json({
+      id: event._id,
+      title: event.title,
+      description: event.description,
+      startTime: event.startTime,
+      location: event.location,
+      price: event.price,
+      coverImage: finalCoverImage,
+      shareUrl: `${process.env.FRONTEND_BASE_URL}/eventee/events/${event._id}`,
     });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Failed to share event" });
   }
-
-  const finalCoverImage =
-    event.coverImage || DEFAULT_EVENT_IMAGE;
-
-  res.json({
-    id: event._id,
-    title: event.title,
-    description: event.description,
-    startTime: event.startTime,
-    location: event.location,
-    price: event.price,
-    coverImage: finalCoverImage,
-    shareUrl: `${process.env.APP_BASE_URL}/api/events/${event._id}`,
-  });
 };

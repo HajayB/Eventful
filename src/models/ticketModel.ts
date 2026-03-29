@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface TicketDocument extends Document {
   eventId: Types.ObjectId;
-  eventeeId: Types.ObjectId;
+  eventeeId?: Types.ObjectId;
   paymentRef:string;
 
   qrPayload: string;
@@ -26,7 +26,8 @@ const ticketSchema = new Schema<TicketDocument>(
     eventeeId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      default: null,
       index: true,
     },
     paymentRef: {

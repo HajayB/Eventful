@@ -4,6 +4,8 @@ import {
   paystackWebhookController,
   resendTickets,
   paymentHistoryController,
+  guestInitializePaymentController,
+  guestResendTicketsController,
 } from "../controllers/paymentController";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createRateLimiter } from "../middlewares/rateLimiter";
@@ -32,5 +34,18 @@ router.post("/resend-ticket/:paymentRef",
 
 // GET /payments/history
 router.get("/history", requireAuth, paymentHistoryController);
+
+// Guest: no auth, rate limited
+router.post(
+  "/guest/initialize",
+  createRateLimiter({ windowMs: 60 * 1000, max: 5 }),
+  guestInitializePaymentController
+);
+
+router.post(
+  "/guest/resend",
+  createRateLimiter({ windowMs: 60 * 1000, max: 3 }),
+  guestResendTicketsController
+);
 
 export default router;

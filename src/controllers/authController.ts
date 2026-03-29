@@ -28,12 +28,11 @@ export const registerController = async (
       sameSite: "strict",
     });
 
-    res.cookie("accessToken", refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
-
 
     res.status(201).json({message:"User registered succesffuly",user:user});
   } catch (error: any) {

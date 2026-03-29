@@ -17,6 +17,7 @@ export interface EventDocument extends Document {
 
   totalTickets: number;
   ticketsSold: number;
+  maxTicketsPerPurchase: number;
 
   createdAt: Date;
 }
@@ -67,16 +68,22 @@ const eventSchema = new Schema<EventDocument>(
       required: true,
       min: 1,
     },
+
     coverImage: {
       type: String,
       trim: true,
-      default:"https://placehold.co/600x400?text=EventFul+CoverImage",
+      default: "https://placehold.co/600x400?text=Eventify+CoverImage",
     },
-    
 
     ticketsSold: {
       type: Number,
       default: 0,
+    },
+
+    maxTicketsPerPurchase: {
+      type: Number,
+      default: 10,
+      min: 1,
     },
   },
   {
@@ -85,7 +92,7 @@ const eventSchema = new Schema<EventDocument>(
 );
 
 // Search index
-eventSchema.index({ title: "text", location: "text", });
+eventSchema.index({ title: "text", location: "text" });
 
 // Sorting & filtering
 eventSchema.index({ startTime: 1 });
@@ -94,4 +101,5 @@ eventSchema.index({ startTime: 1 });
 eventSchema.index({ startTime: 1, endTime: 1 });
 
 eventSchema.index({ startTime: 1, ticketsSold: 1, totalTickets: 1 });
+
 export const Event = mongoose.model<EventDocument>("Event", eventSchema);

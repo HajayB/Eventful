@@ -227,7 +227,7 @@ export const getCreatorDashboard = async (creatorId: string) => {
     })
     .filter(
       e =>
-        e.daysLeft <= 60 && //show events that will happen in 20 days or less
+        e.daysLeft <= 20 && //show events that will happen in 20 days or less
         e.daysLeft > 0 && 
         e.capacityPercent < 0.3 //and events that have sold less than 30% 
     )

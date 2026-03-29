@@ -1,19 +1,18 @@
-
 import mongoose, { Schema, Document, Types } from "mongoose";
-import { string } from "zod";
 
 export type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED";
 
 export interface PaymentDocument extends Document {
-  userId: Types.ObjectId;
+  userId?: Types.ObjectId;
   eventId: Types.ObjectId;
 
   amount: number;
   quantity: number;
-  email:string;
+  email: string;
 
   reference: string;
   status: PaymentStatus;
+  isGuest: boolean;
 
   createdAt: Date;
 }
@@ -23,7 +22,8 @@ const paymentSchema = new Schema<PaymentDocument>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      default: null,
       index: true,
     },
 
@@ -39,8 +39,9 @@ const paymentSchema = new Schema<PaymentDocument>(
       required: true,
       min: 0,
     },
-    email:{
-      type:String,
+
+    email: {
+      type: String,
       required: true,
       lowercase: true,
       trim: true,
@@ -63,6 +64,11 @@ const paymentSchema = new Schema<PaymentDocument>(
       type: String,
       enum: ["PENDING", "SUCCESS", "FAILED"],
       default: "PENDING",
+    },
+
+    isGuest: {
+      type: Boolean,
+      default: false,
     },
   },
   {

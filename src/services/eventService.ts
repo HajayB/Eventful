@@ -1,4 +1,7 @@
 import { Event, EventDocument } from "../models/eventModel";
+import { Payment } from "../models/paymentModel";
+import { User } from "../models/userModel";
+import { sendEventUpdatedEmail, sendEventCancelledEmail } from "./emailService";
 
 interface CreateEventInput {
   creatorId: string;
@@ -9,7 +12,8 @@ interface CreateEventInput {
   endTime: Date;
   price: number;
   totalTickets: number;
-  coverImage:string;
+  coverImage: string;
+  maxTicketsPerPurchase?: number;
 }
 
 
@@ -26,6 +30,7 @@ export const createEventService = async (
     price,
     totalTickets,
     coverImage,
+    maxTicketsPerPurchase,
   } = data;
 
 
@@ -55,7 +60,8 @@ export const createEventService = async (
     totalTickets,
     coverImage,
     ticketsSold: 0,
-  }) ;
+    ...(maxTicketsPerPurchase !== undefined && { maxTicketsPerPurchase }),
+  });
   const eventObject = event.toObject();
 
   const {
@@ -143,7 +149,7 @@ export const getSingleEventService = async (eventId: string) => {
 
 
 export const getCreatorEventsService = async (
-  creatorId: string, page: number = 1, limit: number = 3, search = ""
+  creatorId: string, page: number = 1, limit: number = 4, search = ""
 ) => {
   const skip = (page - 1) * limit;
   const now = new Date();
@@ -214,6 +220,8 @@ export const updateEventService = async (
     endTime: Date;
     price: number;
     totalTickets: number;
+    coverImage: string;
+    maxTicketsPerPurchase: number;
   }>
 ) => {
   const event = await Event.findOne({
@@ -233,6 +241,10 @@ export const updateEventService = async (
     throw new Error("Event end time must be after start time");
   }
 
+  if (updates.coverImage && !updates.coverImage.startsWith("http")) {
+    throw new Error("Invalid image URL");
+  }
+
   if (updates.price !== undefined && updates.price < 0) {
     throw new Error("Price cannot be negative");
   }
@@ -246,9 +258,43 @@ export const updateEventService = async (
     );
   }
 
+  // Snapshot fields users care about before overwriting
+  const watchedFields = ["title", "location", "startTime", "endTime", "price"] as const;
+  const formatValue = (field: string, val: any): string => {
+    if ((field === "startTime" || field === "endTime") && val) {
+      return new Date(val).toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" });
+    }
+    if (field === "price") return `₦${Number(val).toLocaleString()}`;
+    return String(val ?? "");
+  };
+  const before: Record<string, any> = {};
+  watchedFields.forEach((f) => { before[f] = event[f]; });
+
   Object.assign(event, updates);
 
   await event.save();
+
+  // Build diff
+  const changes: { field: string; from: string; to: string }[] = [];
+  watchedFields.forEach((f) => {
+    if (updates[f] !== undefined && String(before[f]) !== String(event[f])) {
+      changes.push({ field: f, from: formatValue(f, before[f]), to: formatValue(f, event[f]) });
+    }
+  });
+
+  // Notify ticket holders (fire-and-forget)
+  if (changes.length) {
+    Promise.all([
+      Payment.find({ eventId: event._id, status: "SUCCESS" }).select("email").lean(),
+      User.findById(event.creatorId).select("email").lean(),
+    ])
+      .then(([payments, creator]) => {
+        const emails = [...new Set(payments.map((p) => p.email))];
+        const creatorEmail = creator?.email ?? "";
+        return sendEventUpdatedEmail(emails, event, changes, creatorEmail);
+      })
+      .catch(console.error);
+  }
 
   const eventObject = event.toObject();
 
@@ -265,19 +311,49 @@ export const updateEventService = async (
   };
 };
 
+// Get today's events (for guest purchase page)
+export const getTodayEventsService = async () => {
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const events = await Event.find({
+    startTime: { $lte: endOfToday },
+    endTime: { $gte: startOfToday },
+    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
+  })
+    .select("-__v")
+    .sort({ startTime: 1 });
+
+  return events;
+};
+
 //delete events (creator only)
 export const deleteEventService = async (
   eventId: string,
   creatorId: string
 ) => {
-  const event = await Event.findOneAndDelete({
-    _id: eventId,
-    creatorId,
-  });
+  const event = await Event.findOne({ _id: eventId, creatorId });
 
   if (!event) {
     throw new Error("Event not found or unauthorized");
   }
 
-  return{message:"Event deleted successfully"};
+  // Fetch ticket-holder emails before deleting (fire-and-forget)
+  Promise.all([
+    Payment.find({ eventId: event._id, status: "SUCCESS" }).select("email").lean(),
+    User.findById(event.creatorId).select("email").lean(),
+  ])
+    .then(([payments, creator]) => {
+      const emails = [...new Set(payments.map((p) => p.email))];
+      const creatorEmail = creator?.email ?? "";
+      return sendEventCancelledEmail(emails, event, creatorEmail);
+    })
+    .catch(console.error);
+
+  await event.deleteOne();
+
+  return { message: "Event deleted successfully" };
 };
