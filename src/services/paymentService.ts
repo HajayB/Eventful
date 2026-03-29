@@ -98,7 +98,6 @@ export const initializeGuestPayment = async ({
   const reference = crypto.randomUUID();
 
   const payment = await Payment.create({
-    userId: null,
     eventId: event._id,
     quantity,
     amount: event.price * quantity,
