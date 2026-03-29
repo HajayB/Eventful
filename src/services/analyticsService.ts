@@ -282,6 +282,6 @@ export const getEventeeUnattendedEvents = async (
     }).populate({
       path: "eventId",
       select: "title location startTime endTime price",
-    })
+    }).sort({ createdAt: -1 });
   };
       
