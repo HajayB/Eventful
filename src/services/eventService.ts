@@ -166,15 +166,13 @@ export const getCreatorEventsService = async (
 
   const activeEventsFilter = {
     creatorId,
-    startTime: { $gt: now },
-    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
+    endTime: { $gte: now },
     ...searchFilter,
   };
 
   const pastEventsFilter = {
     creatorId,
-    startTime: { $lt: now },
-    $expr: { $lt: ["$ticketsSold", "$totalTickets"] },
+    endTime: { $lt: now },
     ...searchFilter,
   };
 
